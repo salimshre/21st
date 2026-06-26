@@ -85,6 +85,7 @@ cmd /c mklink /J journal "C:\Users\StudyAcer\OneDrive\Documents\Obsidian Vault\j
 "C:\Users\StudyAcer\OneDrive\Documents\Obsidian Vault\journal" -> "C:\Users\StudyAcer\OneDrive\Documents\Obsidian Vault\journal\challenges-app\improved_routine.md"
 
 ####
+"C:\Users\StudyAcer\Documents\GitHub\21st" -> "C:\Users\StudyAcer\OneDrive\Documents\Obsidian Vault\journal"
 
 
 #######################################
