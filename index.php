@@ -42,4 +42,5 @@
 <script src="assets/js/todos.js"></script>
 <script src="assets/js/app.js"></script>
 </body>
+
 </html>
