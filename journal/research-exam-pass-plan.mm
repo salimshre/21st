@@ -1,0 +1,23 @@
+<map version="1.0.1">
+<!-- To view this file, download free mind mapping software FreeMind from http://freemind.sourceforge.net -->
+<node CREATED="1782184282164" ID="ID_1902738230" MODIFIED="1782209272618" TEXT="research exam plan">
+<node CREATED="1782184294722" ID="ID_1534757710" MODIFIED="1782209260191" POSITION="right" TEXT="day1">
+<node CREATED="1782184343173" ID="ID_1794179476" MODIFIED="1782184352803" TEXT="read repeated qa">
+<node CREATED="1782209927876" ID="ID_450402846" MODIFIED="1782219975401" TEXT="chp1 to chap7">
+<node CREATED="1782209945228" ID="ID_495336215" MODIFIED="1782209945228" TEXT=""/>
+<node CREATED="1782220010974" ID="ID_432730468" MODIFIED="1782220014710" TEXT="6:51pm now">
+<node CREATED="1782220041239" ID="ID_1638536446" MODIFIED="1782220043118" TEXT="Methodology &#x2013; 3 LH ### 2. Research Design &#x2013; 5 LH ### 3. Data Collection Methods &#x2013; 5 LH ### 4. Data Analysis Techniques &#x2013; 5 LH ### 5. Measurement and Instrumentation &#x2013; 4 LH ### 6. Research Ethics and Professionalism &#x2013; 4 LH ### 7. Report Writing &#x2013; 4 LH"/>
+</node>
+</node>
+</node>
+</node>
+<node CREATED="1782184318283" ID="ID_1240936394" MODIFIED="1782184322910" POSITION="left" TEXT="day2"/>
+<node CREATED="1782184328767" ID="ID_1821427940" MODIFIED="1782209270066" POSITION="right" TEXT="day2">
+<node CREATED="1782209291612" ID="ID_1270054047" MODIFIED="1782209299029" TEXT="syllabus wise read"/>
+</node>
+<node CREATED="1782209274755" ID="ID_565858949" MODIFIED="1782209274755" POSITION="left" TEXT=""/>
+<node CREATED="1782209277459" ID="ID_399121683" MODIFIED="1782209287255" POSITION="right" TEXT="day3-examday">
+<node CREATED="1782209303882" ID="ID_1725146269" MODIFIED="1782209307039" TEXT="revision"/>
+</node>
+</node>
+</map>

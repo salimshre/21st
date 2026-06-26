@@ -1,0 +1,32 @@
+:root, [data-theme="light"]{
+  --dark-bg:#F6F7F9;
+  --card-bg:#FFFFFF;
+  --card-bg-soft:#FAFBFC;
+  --border:#E4E7EC;
+  --border-soft:#EEF0F3;
+  --text-primary:#1B1F27;
+  --text-secondary:#6B7280;
+  --text-muted:#9AA1AC;
+  --header-bg:rgba(246,247,249,.92);
+  --button-text:#1B1F27;
+  --button-on-text:#ffffff;
+  --shadow-soft:rgba(27,31,39,.08);
+
+  --primary:#2563EB;
+  --success:#10b981;
+  --warning:#f59e0b;
+  --danger:#ef4444;
+  --danger-soft:rgba(239,68,68,.14);
+
+  --mind:#8B5CF6;        --mind-tint:#F1ECFD;
+  --learning:#2563EB;    --learning-tint:#EAF1FE;
+  --discipline:#D97706;  --discipline-tint:#FCF1DF;
+  --health:#059669;      --health-tint:#E5F7F0;
+  --diet:#DB2777;        --diet-tint:#FCE8F1;
+
+  --radius:12px;
+  --radius-sm:8px;
+  --font-mono: ui-monospace,"SF Mono","Cascadia Code",Consolas,monospace;
+}
+
+

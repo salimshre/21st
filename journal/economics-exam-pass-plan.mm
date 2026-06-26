@@ -1,0 +1,12 @@
+<map version="1.0.1">
+<!-- To view this file, download free mind mapping software FreeMind from http://freemind.sourceforge.net -->
+<node CREATED="1782450170749" ID="ID_1888749237" MODIFIED="1782450175537" TEXT="plan">
+<node CREATED="1782450177317" ID="ID_1106878288" MODIFIED="1782450192655" POSITION="right" TEXT="day-1 26">
+<node CREATED="1782450221866" ID="ID_1745538930" MODIFIED="1782450226790" TEXT="repeated queston answer read"/>
+</node>
+<node CREATED="1782450198366" ID="ID_1789983283" MODIFIED="1782450202499" POSITION="left" TEXT="day-2 27">
+<node CREATED="1782450231239" ID="ID_1476716692" MODIFIED="1782450236679" TEXT="revisions"/>
+</node>
+<node CREATED="1782450213897" ID="ID_717748432" MODIFIED="1782450218451" POSITION="right" TEXT="day-3 28"/>
+</node>
+</map>

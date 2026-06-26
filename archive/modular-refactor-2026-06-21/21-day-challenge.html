@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>21 Day Challenge</title>
+<style>
+  :root{
+    --bg:#F6F7F9;
+    --surface:#FFFFFF;
+    --ink:#1B1F27;
+    --ink-soft:#6B7280;
+    --ink-faint:#9AA1AC;
+    --border:#E4E7EC;
+    --border-soft:#EEF0F3;
+    --radius:10px;
+
+    --mind:#8B5CF6;     --mind-tint:#F1ECFD;
+    --learning:#2563EB; --learning-tint:#EAF1FE;
+    --discipline:#D97706;--discipline-tint:#FCF1DF;
+    --health:#059669;   --health-tint:#E5F7F0;
+    --diet:#DB2777;     --diet-tint:#FCE8F1;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding:28px 20px 80px;
+  }
+
+  .wrap{max-width:1180px;margin:0 auto;}
+
+  /* ---------- Header ---------- */
+  header{margin-bottom:20px;}
+  .eyebrow{
+    font-family:ui-monospace,"SF Mono","Cascadia Code",Consolas,monospace;
+    font-size:11px; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--ink-faint); margin:0 0 4px;
+  }
+  h1{font-size:26px; font-weight:700; margin:0 0 18px; letter-spacing:-0.01em;}
+
+  .dash{
+    display:flex; flex-wrap:wrap; gap:12px; margin-bottom:16px;
+  }
+  .card{
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); padding:14px 16px;
+  }
+  .card-start{flex:0 0 auto;}
+  .card-start label{display:block; font-size:11px; color:var(--ink-soft); margin-bottom:6px;}
+  .card-start input[type=date]{
+    border:1px solid var(--border); border-radius:6px; padding:6px 8px;
+    font-size:13px; font-family:inherit; color:var(--ink); background:var(--bg);
+  }
+  .card-day{flex:0 0 auto; display:flex; flex-direction:column; justify-content:center;}
+  .card-day .num{
+    font-family:ui-monospace,"SF Mono","Cascadia Code",Consolas,monospace;
+    font-size:20px; font-weight:600; line-height:1;
+  }
+  .card-day .label{font-size:11px; color:var(--ink-soft); margin-top:4px;}
+
+  .card-overall{flex:1 1 220px; min-width:200px;}
+  .card-overall .top{display:flex; justify-content:space-between; align-items:baseline; margin-bottom:8px;}
+  .card-overall .top span:first-child{font-size:11px; color:var(--ink-soft);}
+  .card-overall .top span:last-child{
+    font-family:ui-monospace,monospace; font-size:13px; font-weight:600;
+  }
+  .bar-track{height:7px; background:var(--border-soft); border-radius:99px; overflow:hidden;}
+  .bar-fill{height:100%; background:var(--ink); border-radius:99px; transition:width .25s ease;}
+
+  .card-cats{flex:2 1 360px; display:flex; flex-wrap:wrap; gap:10px 18px;}
+  .cat-mini{flex:1 1 140px; min-width:130px;}
+  .cat-mini .top{display:flex; justify-content:space-between; font-size:11px; margin-bottom:5px;}
+  .cat-mini .top .name{color:var(--ink-soft);}
+  .cat-mini .top .pct{font-family:ui-monospace,monospace; font-weight:600;}
+
+  /* ---------- Table ---------- */
+  .scroll-hint{font-size:12px; color:var(--ink-faint); margin:2px 0 10px;}
+  .table-shell{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    overflow:auto; max-width:100%;
+  }
+  table{border-collapse:separate; border-spacing:0; min-width:max-content;}
+
+  th,td{padding:0; white-space:nowrap;}
+  thead th{
+    position:sticky; top:0; z-index:3;
+    background:var(--surface); border-bottom:1px solid var(--border);
+    font-size:11px; color:var(--ink-soft); font-weight:600;
+    padding:10px 6px; text-align:center;
+  }
+  thead th.today{color:var(--ink); background:#FBFAF7;}
+  thead th.col-sn{text-align:center; width:34px;}
+  thead th.col-activity{text-align:left; padding-left:14px;}
+  thead th.col-cat{text-align:left;}
+  thead th.col-score{text-align:center;}
+
+  th.col-sn, td.col-sn,
+  th.col-activity, td.col-activity{
+    position:sticky; left:0; z-index:2; background:var(--surface);
+  }
+  th.col-activity, td.col-activity{left:34px;}
+  td.col-sn, td.col-activity{border-bottom:1px solid var(--border-soft);}
+  tbody tr:hover td.col-sn, tbody tr:hover td.col-activity{background:#FAFBFC;}
+
+  td.col-sn{
+    text-align:center; font-family:ui-monospace,monospace; font-size:12px; color:var(--ink-faint);
+    padding:8px 4px; width:34px;
+  }
+  td.col-activity{padding:8px 10px 8px 14px; min-width:148px;}
+  .act-name{
+    font-size:13.5px; outline:none; border-radius:5px; padding:2px 4px; margin:-2px -4px;
+  }
+  .act-name:focus{background:var(--bg); box-shadow:0 0 0 2px var(--border);}
+  .act-row-tools{display:inline-flex; align-items:center; gap:6px;}
+  .del-btn{
+    border:none; background:none; color:var(--ink-faint); cursor:pointer;
+    font-size:14px; line-height:1; padding:3px 5px; border-radius:4px; opacity:.45;
+    transition:opacity .12s, color .12s;
+  }
+  /* Hover-only hiding only applies on devices that actually support hover (mouse/trackpad).
+     On touch devices the delete button stays visible at reduced opacity so it can be tapped. */
+  @media (hover:hover){
+    .del-btn{opacity:0;}
+    tr:hover .del-btn{opacity:1;}
+  }
+  .del-btn:hover{color:#DC2626; background:#FEF2F2;}
+  .del-btn:focus-visible{opacity:1; outline:2px solid var(--ink); outline-offset:1px;}
+
+  td.col-cat{padding:8px 10px; border-bottom:1px solid var(--border-soft);}
+  .cat-pill{
+    display:inline-block; font-size:11px; font-weight:600; padding:3px 9px;
+    border-radius:99px; white-space:nowrap;
+  }
+
+  td.col-day{
+    text-align:center; padding:7px; border-bottom:1px solid var(--border-soft); width:48px;
+  }
+  td.col-day.today{background:#FBFAF7;}
+  .chk{
+    width:32px; height:32px; border-radius:8px; border:1.5px solid var(--border);
+    background:var(--surface); cursor:pointer; padding:0;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:15px; color:transparent; transition:background .1s, border-color .1s;
+  }
+  .chk:hover{border-color:var(--ink-faint);}
+  .chk:focus-visible{outline:2px solid var(--ink); outline-offset:1px;}
+  .chk.on{color:#fff;}
+
+  td.col-score{
+    padding:8px 12px; border-bottom:1px solid var(--border-soft); min-width:84px;
+  }
+  .score-txt{
+    font-family:ui-monospace,monospace; font-size:12px; font-weight:600; display:block; margin-bottom:4px;
+  }
+  .score-bar{height:5px; background:var(--border-soft); border-radius:99px; overflow:hidden;}
+  .score-bar > div{height:100%; border-radius:99px;}
+
+  tfoot td{padding:10px 14px; border-top:1px solid var(--border);}
+  .add-row{display:flex; gap:8px; align-items:center; flex-wrap:wrap;}
+  .add-row input[type=text]{
+    border:1px solid var(--border); border-radius:6px; padding:7px 10px; font-size:13px;
+    font-family:inherit; min-width:160px; background:var(--bg); color:var(--ink);
+  }
+  .add-row select{
+    border:1px solid var(--border); border-radius:6px; padding:7px 8px; font-size:13px;
+    font-family:inherit; background:var(--bg); color:var(--ink);
+  }
+  .add-row button{
+    border:none; background:var(--ink); color:#fff; padding:7px 14px; border-radius:6px;
+    font-size:13px; font-weight:600; cursor:pointer;
+  }
+  .add-row button:hover{opacity:.88;}
+
+  /* ---------- Toolbar ---------- */
+  .toolbar{display:flex; gap:10px; margin-top:16px; flex-wrap:wrap;}
+  .tbtn{
+    border:1px solid var(--border); background:var(--surface); color:var(--ink);
+    padding:8px 14px; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer;
+  }
+  .tbtn:hover{background:var(--bg);}
+  .tbtn.danger{color:#B91C1C; border-color:#F3D3D3;}
+  .tbtn.danger:hover{background:#FEF2F2;}
+  footer.note{margin-top:14px; font-size:12px; color:var(--ink-faint); line-height:1.5;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <p class="eyebrow">Personal Tracker · Offline</p>
+    <h1>21 Day Challenge</h1>
+
+    <div class="dash">
+      <div class="card card-start">
+        <label for="startDate">Cycle start date</label>
+        <input type="date" id="startDate">
+      </div>
+
+      <div class="card card-day">
+        <div class="num" id="dayNum">—</div>
+        <div class="label" id="dayLabel">set a start date</div>
+      </div>
+
+      <div class="card card-overall">
+        <div class="top"><span>Overall completion</span><span id="overallPct">0%</span></div>
+        <div class="bar-track"><div class="bar-fill" id="overallBar" style="width:0%"></div></div>
+      </div>
+
+      <div class="card card-cats" id="catMiniWrap"></div>
+    </div>
+
+    <p class="scroll-hint">Swipe / scroll right to see all 21 days →</p>
+  </header>
+
+  <div class="table-shell" id="tableShell">
+    <table>
+      <thead>
+        <tr id="headRow">
+          <th class="col-sn" scope="col">#</th>
+          <th class="col-activity" scope="col">Activity</th>
+          <th class="col-cat" scope="col">Category</th>
+          <!-- day headers injected by JS -->
+          <th class="col-score" scope="col">Score</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+      <tfoot>
+        <tr>
+          <td colspan="25">
+            <div class="add-row">
+              <input type="text" id="newActName" placeholder="New activity name…">
+              <select id="newActCat"></select>
+              <button id="addActBtn" type="button">+ Add activity</button>
+            </div>
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <div class="toolbar">
+    <button class="tbtn" id="exportBtn" type="button">Export CSV</button>
+    <button class="tbtn" id="exportJsonBtn" type="button">Backup JSON</button>
+    <button class="tbtn" id="loadJsonBtn" type="button">Restore JSON</button>
+    <input type="file" id="loadJsonInput" accept="application/json" style="display:none">
+    <button class="tbtn danger" id="resetBtn" type="button">Reset cycle (clear checks)</button>
+  </div>
+
+  <footer class="note">
+    Data is saved automatically in this browser only (localStorage) — fully offline, nothing leaves your machine.
+    It won't sync across browsers or devices on its own. Use <strong>Backup JSON</strong> to save a full copy of
+    everything (activities + every checkmark) and <strong>Restore JSON</strong> to bring it back — on this browser,
+    a new one, or another device. <strong>Export CSV</strong> gives a read-only copy for spreadsheets; use it before
+    resetting if you want a record of a finished cycle.
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var STORAGE_KEY = "challenge21_v2";
+  var DAYS = 21;
+
+  var CATEGORIES = {
+    mind:       { label:"🧠 Mind",       color:"#8B5CF6", tint:"#F1ECFD", pillText:"#6D28D9" },
+    learning:   { label:"📚 Learning",   color:"#2563EB", tint:"#EAF1FE", pillText:"#1D4ED8" },
+    discipline: { label:"💪 Discipline", color:"#D97706", tint:"#FCF1DF", pillText:"#B45309" },
+    health:     { label:"🧍 Health",     color:"#059669", tint:"#E5F7F0", pillText:"#047857" },
+    diet:       { label:"🥗 Diet",       color:"#DB2777", tint:"#FCE8F1", pillText:"#BE185D" }
+  };
+  var CAT_ORDER = ["mind","learning","discipline","health","diet"];
+
+  // "checks" below seeds real Day 1–18 progress (read from the user's prior tracker) so the
+  // app opens already reflecting where they actually are, instead of starting blank.
+  // Index 0 = Day 1 ... Index 20 = Day 21.
+  var DEFAULT_ACTIVITIES = [
+    {name:"Affirmation",      cat:"mind",       checks:[1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,1,0,0,0]},
+    {name:"Meditate (5m)",    cat:"mind",       checks:[1,1,1,1,0,1,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0]},
+    {name:"Gratitude",        cat:"mind",       checks:[1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,1,0,0,0]},
+    {name:"Self Talk (1m)",   cat:"mind",       checks:[1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,1,0,0,0]},
+    {name:"Journal",          cat:"mind",       checks:[1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,1,0,0,0]},
+    {name:"Study 3h",         cat:"learning",   checks:[1,1,0,0,0,1,1,1,1,0,0,0,0,0,0,0,0,1,0,0,0]},
+    {name:"Read 1p",          cat:"learning",   checks:[1,1,1,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+    {name:"Plan Tmrw (5m)",   cat:"learning",   checks:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+    {name:"Wake < 6",         cat:"discipline", checks:[0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+    {name:"Sleep < 11",       cat:"discipline", checks:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+    {name:"No Phone Bed",     cat:"discipline", checks:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+    {name:"Avoid Temptation", cat:"discipline", checks:[1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+    {name:"Digital Detox",    cat:"health",     checks:[1,0,1,0,1,1,1,1,0,1,0,0,0,0,0,0,0,0,0,0,0]},
+    {name:"Workout (3s)",     cat:"health",     checks:[0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+    {name:"45m outdoor",      cat:"health",     checks:[1,1,1,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+    {name:"Wash (AM)",        cat:"health",     checks:[1,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+    {name:"Running (PM)",     cat:"health",     checks:[0,1,1,1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+    {name:"Photo Hair",       cat:"health",     checks:[1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0]},
+    {name:"Vitamin D (15m)",  cat:"health",     checks:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]},
+    {name:"2-4L Water",       cat:"diet",       checks:[0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0]},
+    {name:"No Junk",          cat:"diet",       checks:[1,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0]}
+  ];
+
+  // Seeded so "today" lines up with Day 18 of this cycle. If you open this on a different
+  // date than intended, just change the Cycle start date field above — everything recalculates.
+  var SEED_START_DATE = "2026-06-03";
+
+  function uid(){ return "a" + Math.random().toString(36).slice(2,9); }
+  function todayISO(){
+    var d = new Date();
+    var m = String(d.getMonth()+1).padStart(2,"0");
+    var day = String(d.getDate()).padStart(2,"0");
+    return d.getFullYear() + "-" + m + "-" + day;
+  }
+
+  function defaultState(){
+    var acts = DEFAULT_ACTIVITIES.map(function(a){ return {id:uid(), name:a.name, cat:a.cat}; });
+    var checks = {};
+    acts.forEach(function(a, i){
+      var seed = DEFAULT_ACTIVITIES[i].checks;
+      checks[a.id] = seed ? seed.map(function(v){ return !!v; }) : new Array(DAYS).fill(false);
+    });
+    return { startDate: SEED_START_DATE, activities: acts, checks: checks };
+  }
+
+  function loadState(){
+    try{
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw) return defaultState();
+      var s = JSON.parse(raw);
+      if(!s.activities || !s.checks || !s.startDate) return defaultState();
+      // backfill checks for any activity missing an array
+      s.activities.forEach(function(a){
+        if(!Array.isArray(s.checks[a.id])) s.checks[a.id] = new Array(DAYS).fill(false);
+      });
+      return s;
+    }catch(e){
+      return defaultState();
+    }
+  }
+
+  function isValidState(s){
+    if(!s || typeof s !== "object") return false;
+    if(!Array.isArray(s.activities) || typeof s.checks !== "object" || typeof s.startDate !== "string") return false;
+    return true;
+  }
+
+  var state = loadState();
+
+  function saveState(){
+    try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+    catch(e){ console.error("Could not save:", e); }
+  }
+
+  function currentDayIndex(){
+    var start = new Date(state.startDate + "T00:00:00");
+    var now = new Date();
+    var nowMid = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var startMid = new Date(start.getFullYear(), start.getMonth(), start.getDate());
+    var diff = Math.round((nowMid - startMid) / 86400000) + 1;
+    return diff; // 1-based; may be <1 or >21
+  }
+
+  // ---------- Rendering ----------
+  var headRow = document.getElementById("headRow");
+  var tbody = document.getElementById("tbody");
+  var tableShell = document.getElementById("tableShell");
+  var startDateInput = document.getElementById("startDate");
+  var dayNumEl = document.getElementById("dayNum");
+  var dayLabelEl = document.getElementById("dayLabel");
+  var overallPctEl = document.getElementById("overallPct");
+  var overallBarEl = document.getElementById("overallBar");
+  var catMiniWrap = document.getElementById("catMiniWrap");
+  var newActCat = document.getElementById("newActCat");
+
+  // tfoot colspan = sn + activity + cat + DAYS + score, computed instead of hardcoded
+  // so it can't silently drift out of sync if DAYS ever changes.
+  var footTd = document.querySelector("tfoot td");
+  if(footTd) footTd.colSpan = 3 + DAYS + 1;
+
+  CAT_ORDER.forEach(function(key){
+    var opt = document.createElement("option");
+    opt.value = key; opt.textContent = CATEGORIES[key].label;
+    newActCat.appendChild(opt);
+  });
+
+  function buildHeader(){
+    // remove old day headers (keep first 3 + last)
+    Array.from(headRow.querySelectorAll("th.col-day")).forEach(function(th){ th.remove(); });
+    var scoreTh = headRow.querySelector(".col-score");
+    var todayIdx = currentDayIndex();
+    for(var d=1; d<=DAYS; d++){
+      var th = document.createElement("th");
+      th.className = "col-day" + (d===todayIdx ? " today" : "");
+      th.scope = "col";
+      th.textContent = "D" + d;
+      headRow.insertBefore(th, scoreTh);
+    }
+  }
+
+  function groupedActivities(){
+    var groups = {};
+    CAT_ORDER.forEach(function(c){ groups[c] = []; });
+    state.activities.forEach(function(a){
+      if(!groups[a.cat]) groups[a.cat] = [];
+      groups[a.cat].push(a);
+    });
+    var out = [];
+    CAT_ORDER.forEach(function(c){ out = out.concat(groups[c]); });
+    return out;
+  }
+
+  function renderBody(){
+    tbody.innerHTML = "";
+    var todayIdx = currentDayIndex();
+    var ordered = groupedActivities();
+
+    ordered.forEach(function(a, idx){
+      var cat = CATEGORIES[a.cat] || CATEGORIES.mind;
+      var tr = document.createElement("tr");
+
+      var tdSn = document.createElement("td");
+      tdSn.className = "col-sn";
+      tdSn.textContent = idx + 1;
+      tr.appendChild(tdSn);
+
+      var tdAct = document.createElement("td");
+      tdAct.className = "col-activity";
+      var toolsWrap = document.createElement("div");
+      toolsWrap.className = "act-row-tools";
+      var nameSpan = document.createElement("span");
+      nameSpan.className = "act-name";
+      nameSpan.contentEditable = "true";
+      nameSpan.spellcheck = false;
+      nameSpan.setAttribute("aria-label", "Activity name, editable");
+      nameSpan.textContent = a.name;
+      nameSpan.addEventListener("keydown", function(e){
+        if(e.key === "Enter"){ e.preventDefault(); nameSpan.blur(); }
+      });
+      nameSpan.addEventListener("blur", function(){
+        var val = nameSpan.textContent.trim();
+        a.name = val || a.name;
+        nameSpan.textContent = a.name;
+        // refresh this row's per-day checkbox labels so they stay accurate without a full re-render
+        Array.from(tr.querySelectorAll(".chk")).forEach(function(btn, i){
+          btn.setAttribute("aria-label", a.name + " — Day " + (i+1));
+        });
+        delBtn.setAttribute("aria-label", "Delete " + a.name);
+        saveState();
+      });
+      var delBtn = document.createElement("button");
+      delBtn.className = "del-btn"; delBtn.type = "button"; delBtn.title = "Delete activity";
+      delBtn.setAttribute("aria-label", "Delete " + a.name);
+      delBtn.textContent = "✕";
+      delBtn.addEventListener("click", function(){
+        if(confirm('Delete "' + a.name + '"? This removes its checks too.')){
+          state.activities = state.activities.filter(function(x){ return x.id !== a.id; });
+          delete state.checks[a.id];
+          saveState(); renderAll();
+        }
+      });
+      toolsWrap.appendChild(nameSpan);
+      toolsWrap.appendChild(delBtn);
+      tdAct.appendChild(toolsWrap);
+      tr.appendChild(tdAct);
+
+      var tdCat = document.createElement("td");
+      tdCat.className = "col-cat";
+      var pill = document.createElement("span");
+      pill.className = "cat-pill";
+      pill.style.background = cat.tint;
+      pill.style.color = cat.pillText;
+      pill.textContent = cat.label;
+      tdCat.appendChild(pill);
+      tr.appendChild(tdCat);
+
+      var checksArr = state.checks[a.id];
+
+      // Score cell is built before the day loop so each checkbox's click handler can
+      // update it directly, instead of triggering a full table re-render on every click.
+      var tdScore = document.createElement("td");
+      tdScore.className = "col-score";
+      var scoreTxt = document.createElement("span");
+      scoreTxt.className = "score-txt";
+      var barTrack = document.createElement("div");
+      barTrack.className = "score-bar";
+      var barFill = document.createElement("div");
+      barFill.style.background = cat.color;
+      barTrack.appendChild(barFill);
+      tdScore.appendChild(scoreTxt);
+      tdScore.appendChild(barTrack);
+
+      function updateScore(){
+        var checkedCount = checksArr.filter(Boolean).length;
+        var pct = Math.round((checkedCount / DAYS) * 100);
+        scoreTxt.textContent = checkedCount + "/" + DAYS;
+        barFill.style.width = pct + "%";
+      }
+      updateScore();
+
+      for(var d=0; d<DAYS; d++){
+        var tdDay = document.createElement("td");
+        tdDay.className = "col-day" + ((d+1)===todayIdx ? " today" : "");
+        var btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "chk" + (checksArr[d] ? " on" : "");
+        btn.setAttribute("aria-pressed", checksArr[d] ? "true" : "false");
+        btn.setAttribute("aria-label", a.name + " — Day " + (d+1));
+        btn.textContent = "✓";
+        if(checksArr[d]){
+          btn.style.background = cat.color;
+          btn.style.borderColor = cat.color;
+        }
+        (function(dayIdx, button){
+          button.addEventListener("click", function(){
+            checksArr[dayIdx] = !checksArr[dayIdx];
+            var isOn = checksArr[dayIdx];
+            button.classList.toggle("on", isOn);
+            button.setAttribute("aria-pressed", isOn ? "true" : "false");
+            if(isOn){
+              button.style.background = cat.color;
+              button.style.borderColor = cat.color;
+            } else {
+              button.style.background = "";
+              button.style.borderColor = "";
+            }
+            saveState();
+            updateScore();
+            renderDash();
+          });
+        })(d, btn);
+        tdDay.appendChild(btn);
+        tr.appendChild(tdDay);
+      }
+
+      tr.appendChild(tdScore);
+      tbody.appendChild(tr);
+    });
+  }
+
+  function renderDash(){
+    startDateInput.value = state.startDate;
+    var idx = currentDayIndex();
+    if(idx < 1){
+      dayNumEl.textContent = "—";
+      dayLabelEl.textContent = "starts " + state.startDate;
+    } else if(idx > DAYS){
+      dayNumEl.textContent = "✓";
+      dayLabelEl.textContent = "cycle complete";
+    } else {
+      dayNumEl.textContent = "Day " + idx;
+      dayLabelEl.textContent = "of " + DAYS;
+    }
+
+    var totalChecked = 0, totalCells = 0;
+    var catChecked = {}, catTotal = {};
+    CAT_ORDER.forEach(function(c){ catChecked[c]=0; catTotal[c]=0; });
+
+    state.activities.forEach(function(a){
+      var arr = state.checks[a.id] || [];
+      var c = arr.filter(Boolean).length;
+      totalChecked += c; totalCells += DAYS;
+      if(catTotal[a.cat] === undefined){ catTotal[a.cat]=0; catChecked[a.cat]=0; }
+      catChecked[a.cat] += c; catTotal[a.cat] += DAYS;
+    });
+
+    var overallPct = totalCells ? Math.round((totalChecked/totalCells)*100) : 0;
+    overallPctEl.textContent = overallPct + "%";
+    overallBarEl.style.width = overallPct + "%";
+
+    catMiniWrap.innerHTML = "";
+    CAT_ORDER.forEach(function(c){
+      if(catTotal[c] === 0) return;
+      var cat = CATEGORIES[c];
+      var p = Math.round((catChecked[c]/catTotal[c])*100);
+      var box = document.createElement("div");
+      box.className = "cat-mini";
+      box.innerHTML =
+        '<div class="top"><span class="name">'+cat.label+'</span><span class="pct" style="color:'+cat.pillText+'">'+p+'%</span></div>' +
+        '<div class="bar-track"><div class="bar-fill" style="width:'+p+'%;background:'+cat.color+'"></div></div>';
+      catMiniWrap.appendChild(box);
+    });
+  }
+
+  function renderAll(){
+    buildHeader();
+    renderBody();
+    renderDash();
+  }
+
+  // ---------- Events ----------
+  startDateInput.addEventListener("change", function(){
+    if(startDateInput.value){
+      state.startDate = startDateInput.value;
+      saveState();
+      renderAll();
+    }
+  });
+
+  document.getElementById("addActBtn").addEventListener("click", function(){
+    var nameInput = document.getElementById("newActName");
+    var name = nameInput.value.trim();
+    if(!name) { nameInput.focus(); return; }
+    var cat = newActCat.value;
+    var id = uid();
+    state.activities.push({id:id, name:name, cat:cat});
+    state.checks[id] = new Array(DAYS).fill(false);
+    nameInput.value = "";
+    saveState();
+    renderAll();
+  });
+  document.getElementById("newActName").addEventListener("keydown", function(e){
+    if(e.key === "Enter") document.getElementById("addActBtn").click();
+  });
+
+  document.getElementById("resetBtn").addEventListener("click", function(){
+    if(confirm("Clear all checkmarks and start this cycle over from today? Activities are kept. Back up first if you want a record.")){
+      state.activities.forEach(function(a){ state.checks[a.id] = new Array(DAYS).fill(false); });
+      state.startDate = todayISO();
+      saveState();
+      renderAll();
+    }
+  });
+
+  document.getElementById("exportBtn").addEventListener("click", function(){
+    var header = ["Activity","Category"];
+    for(var d=1; d<=DAYS; d++) header.push("Day " + d);
+    header.push("S.n","Score");
+
+    var rows = [header];
+    var ordered = groupedActivities();
+    ordered.forEach(function(a, idx){
+      var cat = CATEGORIES[a.cat] || CATEGORIES.mind;
+      var arr = state.checks[a.id] || [];
+      var row = [a.name, cat.label];
+      for(var d=0; d<DAYS; d++) row.push(arr[d] ? "Yes" : "No");
+      var checkedCount = arr.filter(Boolean).length;
+      row.push(idx+1, checkedCount + "/" + DAYS);
+      rows.push(row);
+    });
+
+    var csv = rows.map(function(r){
+      return r.map(function(cell){
+        var s = String(cell);
+        if(s.indexOf(",") > -1 || s.indexOf('"') > -1){
+          s = '"' + s.replace(/"/g,'""') + '"';
+        }
+        return s;
+      }).join(",");
+    }).join("\r\n");
+
+    var blob = new Blob([csv], {type:"text/csv;charset=utf-8;"});
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = "21-day-challenge-" + todayISO() + ".csv";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  });
+
+  document.getElementById("exportJsonBtn").addEventListener("click", function(){
+    var blob = new Blob([JSON.stringify(state, null, 2)], {type:"application/json"});
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = "21-day-challenge-backup-" + todayISO() + ".json";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  });
+
+  var loadJsonInput = document.getElementById("loadJsonInput");
+  document.getElementById("loadJsonBtn").addEventListener("click", function(){
+    loadJsonInput.click();
+  });
+  loadJsonInput.addEventListener("change", function(e){
+    var file = e.target.files && e.target.files[0];
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      var parsed;
+      try{
+        parsed = JSON.parse(String(reader.result));
+      }catch(err){
+        alert("That file isn't valid JSON — make sure it's a backup exported from this tracker.");
+        e.target.value = "";
+        return;
+      }
+      if(!isValidState(parsed)){
+        alert("That JSON doesn't look like a tracker backup (missing activities/checks/startDate).");
+        e.target.value = "";
+        return;
+      }
+      parsed.activities.forEach(function(a){
+        if(!Array.isArray(parsed.checks[a.id])) parsed.checks[a.id] = new Array(DAYS).fill(false);
+      });
+      if(!confirm("Load this backup? It will replace everything currently in this tracker.")){
+        e.target.value = "";
+        return;
+      }
+      state = parsed;
+      saveState();
+      renderAll();
+      e.target.value = "";
+    };
+    reader.readAsText(file);
+  });
+
+  renderAll();
+
+  // One-time scroll so today's column is in view on first load, without yanking the
+  // scroll position around every time the table re-renders after that.
+  requestAnimationFrame(function(){
+    var todayTh = headRow.querySelector("th.col-day.today");
+    if(todayTh && todayTh.scrollIntoView){
+      todayTh.scrollIntoView({inline:"center", block:"nearest"});
+    }
+  });
+})();
+</script>
+</body>
+</html>

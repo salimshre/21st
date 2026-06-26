@@ -1,0 +1,187 @@
+[Sun Jun 21 09:45:50 2026] PHP 8.2.12 Development Server (http://localhost:8000) started
+[Sun Jun 21 09:45:52 2026] [::1]:61135 Accepted
+[Sun Jun 21 09:45:52 2026] [::1]:61135 [200]: GET /
+[Sun Jun 21 09:45:52 2026] [::1]:61135 Closing
+[Sun Jun 21 09:45:52 2026] [::1]:61136 Accepted
+[Sun Jun 21 09:45:52 2026] [::1]:61136 [200]: GET /
+[Sun Jun 21 09:45:52 2026] [::1]:61136 Closing
+[Sun Jun 21 09:45:52 2026] [::1]:61137 Accepted
+[Sun Jun 21 09:45:52 2026] [::1]:61137 [200]: GET /assets/css/variables.css
+[Sun Jun 21 09:45:52 2026] [::1]:61138 Accepted
+[Sun Jun 21 09:45:52 2026] [::1]:61139 Accepted
+[Sun Jun 21 09:45:52 2026] [::1]:61138 [200]: GET /assets/css/light-theme.css
+[Sun Jun 21 09:45:52 2026] [::1]:61140 Accepted
+[Sun Jun 21 09:45:52 2026] [::1]:61139 [200]: GET /assets/css/dark-theme.css
+[Sun Jun 21 09:45:52 2026] [::1]:61137 Closing
+[Sun Jun 21 09:45:52 2026] [::1]:61141 Accepted
+[Sun Jun 21 09:45:52 2026] [::1]:61140 [200]: GET /assets/css/app.css
+[Sun Jun 21 09:45:52 2026] [::1]:61142 Accepted
+[Sun Jun 21 09:45:52 2026] [::1]:61141 [200]: GET /assets/js/storage.js
+[Sun Jun 21 09:45:52 2026] [::1]:61138 Closing
+[Sun Jun 21 09:45:52 2026] [::1]:61143 Accepted
+[Sun Jun 21 09:45:52 2026] [::1]:61142 [200]: GET /assets/js/theme.js
+[Sun Jun 21 09:45:52 2026] [::1]:61139 Closing
+[Sun Jun 21 09:45:52 2026] [::1]:61143 [200]: GET /assets/js/habits.js
+[Sun Jun 21 09:45:52 2026] [::1]:61140 Closing
+[Sun Jun 21 09:45:52 2026] [::1]:61141 Closing
+[Sun Jun 21 09:45:52 2026] [::1]:61144 Accepted
+[Sun Jun 21 09:45:52 2026] [::1]:61142 Closing
+[Sun Jun 21 09:45:52 2026] [::1]:61145 Accepted
+[Sun Jun 21 09:45:52 2026] [::1]:61143 Closing
+[Sun Jun 21 09:45:52 2026] [::1]:61144 [200]: GET /assets/js/challenge.js
+[Sun Jun 21 09:45:52 2026] [::1]:61145 [200]: GET /assets/js/analytics.js
+[Sun Jun 21 09:45:52 2026] [::1]:61144 Closing
+[Sun Jun 21 09:45:52 2026] [::1]:61145 Closing
+[Sun Jun 21 09:45:52 2026] [::1]:61146 Accepted
+[Sun Jun 21 09:45:52 2026] [::1]:61146 [200]: GET /assets/js/app.js
+[Sun Jun 21 09:45:52 2026] [::1]:61146 Closing
+[Sun Jun 21 09:47:19 2026] [::1]:61173 Accepted
+[Sun Jun 21 09:47:19 2026] [::1]:61174 Accepted
+[Sun Jun 21 09:47:19 2026] [::1]:61174 [200]: GET /
+[Sun Jun 21 09:47:19 2026] [::1]:61174 Closing
+[Sun Jun 21 09:47:19 2026] [::1]:61173 [200]: GET /assets/css/variables.css
+[Sun Jun 21 09:47:19 2026] [::1]:61175 Accepted
+[Sun Jun 21 09:47:19 2026] [::1]:61176 Accepted
+[Sun Jun 21 09:47:19 2026] [::1]:61175 [200]: GET /assets/css/light-theme.css
+[Sun Jun 21 09:47:19 2026] [::1]:61177 Accepted
+[Sun Jun 21 09:47:19 2026] [::1]:61176 [200]: GET /assets/css/dark-theme.css
+[Sun Jun 21 09:47:19 2026] [::1]:61173 Closing
+[Sun Jun 21 09:47:19 2026] [::1]:61178 Accepted
+[Sun Jun 21 09:47:19 2026] [::1]:61177 [200]: GET /assets/css/app.css
+[Sun Jun 21 09:47:19 2026] [::1]:61179 Accepted
+[Sun Jun 21 09:47:19 2026] [::1]:61178 [200]: GET /assets/js/storage.js
+[Sun Jun 21 09:47:19 2026] [::1]:61175 Closing
+[Sun Jun 21 09:47:19 2026] [::1]:61180 Accepted
+[Sun Jun 21 09:47:19 2026] [::1]:61179 [200]: GET /assets/js/theme.js
+[Sun Jun 21 09:47:19 2026] [::1]:61176 Closing
+[Sun Jun 21 09:47:19 2026] [::1]:61180 [200]: GET /assets/js/habits.js
+[Sun Jun 21 09:47:19 2026] [::1]:61177 Closing
+[Sun Jun 21 09:47:19 2026] [::1]:61178 Closing
+[Sun Jun 21 09:47:19 2026] [::1]:61179 Closing
+[Sun Jun 21 09:47:19 2026] [::1]:61181 Accepted
+[Sun Jun 21 09:47:19 2026] [::1]:61180 Closing
+[Sun Jun 21 09:47:19 2026] [::1]:61182 Accepted
+[Sun Jun 21 09:47:19 2026] [::1]:61181 [200]: GET /assets/js/challenge.js
+[Sun Jun 21 09:47:19 2026] [::1]:61182 [200]: GET /assets/js/analytics.js
+[Sun Jun 21 09:47:19 2026] [::1]:61181 Closing
+[Sun Jun 21 09:47:19 2026] [::1]:61182 Closing
+[Sun Jun 21 09:47:19 2026] [::1]:61183 Accepted
+[Sun Jun 21 09:47:19 2026] [::1]:61183 [200]: GET /assets/js/app.js
+[Sun Jun 21 09:47:19 2026] [::1]:61183 Closing
+[Sun Jun 21 09:54:50 2026] [::1]:61344 Accepted
+[Sun Jun 21 09:54:50 2026] [::1]:61345 Accepted
+[Sun Jun 21 09:54:50 2026] [::1]:61345 [200]: GET /
+[Sun Jun 21 09:54:50 2026] [::1]:61345 Closing
+[Sun Jun 21 09:54:50 2026] [::1]:61344 [200]: GET /assets/css/variables.css
+[Sun Jun 21 09:54:50 2026] [::1]:61346 Accepted
+[Sun Jun 21 09:54:50 2026] [::1]:61346 [200]: GET /assets/css/light-theme.css
+[Sun Jun 21 09:54:50 2026] [::1]:61344 Closing
+[Sun Jun 21 09:54:50 2026] [::1]:61347 Accepted
+[Sun Jun 21 09:54:50 2026] [::1]:61348 Accepted
+[Sun Jun 21 09:54:50 2026] [::1]:61347 [200]: GET /assets/css/dark-theme.css
+[Sun Jun 21 09:54:50 2026] [::1]:61346 Closing
+[Sun Jun 21 09:54:50 2026] [::1]:61349 Accepted
+[Sun Jun 21 09:54:50 2026] [::1]:61348 [200]: GET /assets/css/app.css
+[Sun Jun 21 09:54:50 2026] [::1]:61350 Accepted
+[Sun Jun 21 09:54:50 2026] [::1]:61349 [200]: GET /assets/js/storage.js
+[Sun Jun 21 09:54:50 2026] [::1]:61350 [200]: GET /assets/js/theme.js
+[Sun Jun 21 09:54:50 2026] [::1]:61347 Closing
+[Sun Jun 21 09:54:50 2026] [::1]:61348 Closing
+[Sun Jun 21 09:54:50 2026] [::1]:61349 Closing
+[Sun Jun 21 09:54:50 2026] [::1]:61350 Closing
+[Sun Jun 21 09:54:50 2026] [::1]:61351 Accepted
+[Sun Jun 21 09:54:50 2026] [::1]:61352 Accepted
+[Sun Jun 21 09:54:50 2026] [::1]:61353 Accepted
+[Sun Jun 21 09:54:50 2026] [::1]:61354 Accepted
+[Sun Jun 21 09:54:50 2026] [::1]:61351 [200]: GET /assets/js/habits.js
+[Sun Jun 21 09:54:50 2026] [::1]:61352 [200]: GET /assets/js/challenge.js
+[Sun Jun 21 09:54:50 2026] [::1]:61353 [200]: GET /assets/js/analytics.js
+[Sun Jun 21 09:54:50 2026] [::1]:61354 [200]: GET /assets/js/app.js
+[Sun Jun 21 09:54:50 2026] [::1]:61351 Closing
+[Sun Jun 21 09:54:50 2026] [::1]:61352 Closing
+[Sun Jun 21 09:54:50 2026] [::1]:61353 Closing
+[Sun Jun 21 09:54:50 2026] [::1]:61354 Closing
+[Sun Jun 21 09:54:51 2026] [::1]:61358 Accepted
+[Sun Jun 21 09:54:51 2026] [::1]:61358 [404]: GET /favicon.ico - No such file or directory
+[Sun Jun 21 09:54:51 2026] [::1]:61358 Closing
+[Sun Jun 21 09:55:40 2026] [::1]:61395 Accepted
+[Sun Jun 21 09:55:40 2026] [::1]:61395 [200]: GET /
+[Sun Jun 21 09:55:40 2026] [::1]:61395 Closing
+[Sun Jun 21 09:55:40 2026] [::1]:61396 Accepted
+[Sun Jun 21 09:55:40 2026] [::1]:61396 [200]: GET /assets/css/variables.css
+[Sun Jun 21 09:55:40 2026] [::1]:61396 Closing
+[Sun Jun 21 09:55:40 2026] [::1]:61397 Accepted
+[Sun Jun 21 09:55:40 2026] [::1]:61397 [200]: GET /assets/css/light-theme.css
+[Sun Jun 21 09:55:40 2026] [::1]:61397 Closing
+[Sun Jun 21 09:55:40 2026] [::1]:61398 Accepted
+[Sun Jun 21 09:55:40 2026] [::1]:61398 [200]: GET /assets/css/dark-theme.css
+[Sun Jun 21 09:55:40 2026] [::1]:61398 Closing
+[Sun Jun 21 09:55:40 2026] [::1]:61399 Accepted
+[Sun Jun 21 09:55:40 2026] [::1]:61399 [200]: GET /assets/css/app.css
+[Sun Jun 21 09:55:40 2026] [::1]:61399 Closing
+[Sun Jun 21 09:55:40 2026] [::1]:61400 Accepted
+[Sun Jun 21 09:55:40 2026] [::1]:61400 [200]: GET /assets/js/storage.js
+[Sun Jun 21 09:55:40 2026] [::1]:61400 Closing
+[Sun Jun 21 09:55:40 2026] [::1]:61401 Accepted
+[Sun Jun 21 09:55:40 2026] [::1]:61401 [200]: GET /assets/js/theme.js
+[Sun Jun 21 09:55:40 2026] [::1]:61401 Closing
+[Sun Jun 21 09:55:40 2026] [::1]:61402 Accepted
+[Sun Jun 21 09:55:40 2026] [::1]:61402 [200]: GET /assets/js/habits.js
+[Sun Jun 21 09:55:40 2026] [::1]:61402 Closing
+[Sun Jun 21 09:55:40 2026] [::1]:61403 Accepted
+[Sun Jun 21 09:55:40 2026] [::1]:61403 [200]: GET /assets/js/challenge.js
+[Sun Jun 21 09:55:40 2026] [::1]:61403 Closing
+[Sun Jun 21 09:55:40 2026] [::1]:61404 Accepted
+[Sun Jun 21 09:55:40 2026] [::1]:61404 [200]: GET /assets/js/analytics.js
+[Sun Jun 21 09:55:40 2026] [::1]:61404 Closing
+[Sun Jun 21 09:55:40 2026] [::1]:61405 Accepted
+[Sun Jun 21 09:55:40 2026] [::1]:61405 [200]: GET /assets/js/app.js
+[Sun Jun 21 09:55:40 2026] [::1]:61405 Closing
+[Sun Jun 21 09:55:40 2026] [::1]:61406 Accepted
+[Sun Jun 21 09:55:40 2026] [::1]:61406 [200]: GET /assets/js/challenge.js
+[Sun Jun 21 09:55:40 2026] [::1]:61406 Closing
+[Sun Jun 21 09:55:40 2026] [::1]:61407 Accepted
+[Sun Jun 21 09:55:40 2026] [::1]:61407 [200]: GET /assets/js/analytics.js
+[Sun Jun 21 09:55:40 2026] [::1]:61407 Closing
+[Sun Jun 21 09:55:40 2026] [::1]:61408 Accepted
+[Sun Jun 21 09:55:40 2026] [::1]:61408 [200]: GET /assets/js/app.js
+[Sun Jun 21 09:55:40 2026] [::1]:61408 Closing
+[Sun Jun 21 09:56:11 2026] [::1]:61426 Accepted
+[Sun Jun 21 09:56:11 2026] [::1]:61426 [200]: GET /
+[Sun Jun 21 09:56:11 2026] [::1]:61426 Closing
+[Sun Jun 21 09:57:07 2026] [::1]:61468 Accepted
+[Sun Jun 21 09:57:07 2026] [::1]:61469 Accepted
+[Sun Jun 21 09:57:07 2026] [::1]:61469 [200]: GET /
+[Sun Jun 21 09:57:07 2026] [::1]:61469 Closing
+[Sun Jun 21 09:57:07 2026] [::1]:61468 [200]: GET /assets/css/variables.css
+[Sun Jun 21 09:57:07 2026] [::1]:61471 Accepted
+[Sun Jun 21 09:57:07 2026] [::1]:61468 Closing
+[Sun Jun 21 09:57:07 2026] [::1]:61472 Accepted
+[Sun Jun 21 09:57:07 2026] [::1]:61473 Accepted
+[Sun Jun 21 09:57:07 2026] [::1]:61471 [200]: GET /assets/css/light-theme.css
+[Sun Jun 21 09:57:07 2026] [::1]:61474 Accepted
+[Sun Jun 21 09:57:07 2026] [::1]:61475 Accepted
+[Sun Jun 21 09:57:07 2026] [::1]:61472 [200]: GET /assets/css/dark-theme.css
+[Sun Jun 21 09:57:07 2026] [::1]:61473 [200]: GET /assets/css/app.css
+[Sun Jun 21 09:57:07 2026] [::1]:61474 [200]: GET /assets/js/storage.js
+[Sun Jun 21 09:57:07 2026] [::1]:61475 [200]: GET /assets/js/theme.js
+[Sun Jun 21 09:57:07 2026] [::1]:61471 Closing
+[Sun Jun 21 09:57:07 2026] [::1]:61472 Closing
+[Sun Jun 21 09:57:07 2026] [::1]:61476 Accepted
+[Sun Jun 21 09:57:07 2026] [::1]:61473 Closing
+[Sun Jun 21 09:57:07 2026] [::1]:61474 Closing
+[Sun Jun 21 09:57:07 2026] [::1]:61475 Closing
+[Sun Jun 21 09:57:07 2026] [::1]:61477 Accepted
+[Sun Jun 21 09:57:07 2026] [::1]:61476 [200]: GET /assets/js/habits.js
+[Sun Jun 21 09:57:07 2026] [::1]:61477 [200]: GET /assets/js/challenge.js
+[Sun Jun 21 09:57:07 2026] [::1]:61476 Closing
+[Sun Jun 21 09:57:07 2026] [::1]:61477 Closing
+[Sun Jun 21 09:57:07 2026] [::1]:61478 Accepted
+[Sun Jun 21 09:57:07 2026] [::1]:61478 [200]: GET /assets/js/analytics.js
+[Sun Jun 21 09:57:07 2026] [::1]:61478 Closing
+[Sun Jun 21 09:57:07 2026] [::1]:61479 Accepted
+[Sun Jun 21 09:57:07 2026] [::1]:61479 [200]: GET /assets/js/app.js
+[Sun Jun 21 09:57:07 2026] [::1]:61479 Closing
+[Sun Jun 21 09:57:09 2026] [::1]:61483 Accepted
+[Sun Jun 21 09:57:09 2026] [::1]:61483 [404]: GET /favicon.ico - No such file or directory
+[Sun Jun 21 09:57:09 2026] [::1]:61483 Closing
