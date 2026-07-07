@@ -317,29 +317,16 @@ tfoot td{padding:12px 14px; border-top:1px solid var(--border);}
 .inline-action:hover{opacity:.9;}
 
 .routine-row{
-  display:grid; grid-template-columns:auto 90px 1fr auto auto auto; align-items:flex-start; gap:10px;
+  display:grid; grid-template-columns:104px minmax(0,1fr) auto; align-items:center; gap:12px;
   padding:14px 16px; border-bottom:1px solid var(--border); cursor:pointer; transition:all .15s; user-select:none;
-  position:relative;
 }
 .routine-row:last-child{border-bottom:none;}
-.routine-row:hover{background:rgba(59,130,246,.08); padding-left:18px;}
-.routine-time{
-  font-size:12px; font-weight:700; color:var(--text-primary); font-variant-numeric:tabular-nums;
-  min-width:90px; line-height:1.4;
-}
-.routine-main{
-  display:flex; flex-direction:column; gap:4px; min-width:0; padding-top:1px;
-}
-.routine-name{
-  font-size:14px; font-weight:700; color:var(--text-primary); display:block;
-  word-break:break-word;
-}
-.routine-task{
-  font-size:12px; color:var(--text-muted); display:block; line-height:1.35;
-  word-break:break-word; font-style:italic;
-}
+.routine-row:hover{background:rgba(59,130,246,.08);}
+.routine-time{font-size:12px; color:var(--text-muted); font-variant-numeric:tabular-nums;}
+.routine-name{font-size:14px; font-weight:700; color:var(--text-primary);}
+.routine-task{font-size:12px; color:var(--text-muted); margin-top:3px; line-height:1.4;}
 .routine-row.done .routine-name, .routine-row.done .routine-task, .routine-row.done .routine-time{
-  color:var(--text-muted); text-decoration:line-through; opacity:.6;
+  color:var(--text-muted); text-decoration:line-through;
 }
 
 .today-subjects{display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:10px; margin-bottom:1.25rem;}
@@ -598,7 +585,6 @@ tfoot td{padding:12px 14px; border-top:1px solid var(--border);}
   opacity: 0.9;
 }
 
-
 /* ---- To‑Do enhancements ---- */
 .todo-toolbar {
   display: flex;
@@ -743,61 +729,9 @@ tfoot td{padding:12px 14px; border-top:1px solid var(--border);}
   border: 1px solid rgba(239, 68, 68, 0.2);
 }
 
-/* ---- Editable fields (subject rotation & routine) ---- */
-.editable {
-  cursor: text;
-  border-radius: 4px;
-  padding: 1px 4px;
-  transition: background 0.15s;
-}
-.editable:hover {
-  background: var(--card-bg-soft);
-}
-.editable:focus {
-  outline: 2px solid var(--primary);
-  background: var(--card-bg-soft);
-}
+/* ---- New styles for custom habits, focus mode, etc. ---- */
 
-.routine-main {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 0;
-}
-
-/* ---- Routine drag handle & delete ---- */
-.routine-drag-handle {
-  color: var(--text-muted);
-  font-size: 18px;
-  cursor: grab;
-  user-select: none;
-  margin-right: 4px;
-  opacity: 0.5;
-}
-.routine-row:hover .routine-drag-handle {
-  opacity: 1;
-}
-.routine-delete {
-  border: none;
-  background: none;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 14px;
-  padding: 4px 6px;
-  border-radius: 4px;
-  opacity: 0.5;
-  transition: opacity 0.15s, background 0.15s;
-}
-.routine-row:hover .routine-delete {
-  opacity: 1;
-}
-.routine-delete:hover {
-  background: var(--danger-soft);
-  color: #fca5a5;
-}
-
-
-/* ---- Mobile responsiveness for 21-day grid ---- */
+/* ---- Mobile responsiveness for 21-day grid (enhanced) ---- */
 @media (max-width: 768px) {
   .table-shell {
     overflow-x: auto;
@@ -903,4 +837,3 @@ body.focus-mode .view {
   max-width: 300px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 }
-

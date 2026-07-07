@@ -199,7 +199,7 @@ App.Challenge = (function(){
     dom.addActBtn = document.getElementById("addActBtn");
     dom.challengeChecklist = document.getElementById("challengeChecklist");
     dom.challengeDayNote = document.getElementById("challengeDayNote");
-    dom.quickStartCycle = document.getElementById("quickStartCycle"); // from header
+    dom.quickStartCycle = document.getElementById("quickStartCycle");
   }
 
   // ---- Render functions (mostly unchanged from original, but we include them all) ----
@@ -924,4 +924,3 @@ App.Challenge = (function(){
     invalidateStatsCache: invalidateStatsCache
   };
 })();
-

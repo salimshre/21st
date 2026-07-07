@@ -417,9 +417,7 @@
 
     // Show tour only on first visit (and if not completed)
     if(!App.Storage.state.meta.tourCompleted){
-      // Delay a bit so the DOM is fully rendered
       setTimeout(showTour, 600);
-      // Do NOT set tourCompleted here – it will be set when the tour is finished or skipped.
     }
 
     // Notification permission & reminder
@@ -441,3 +439,4 @@
 
   init();
 })();
+
