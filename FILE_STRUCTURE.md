@@ -1,5 +1,5 @@
 ﻿# Repository file structure
-Generated: 2026-07-07T14:29:53+05:45
+Generated: 2026-07-07T15:35:17+05:45
 A cleaner, hierarchical view of the repository. Directories end with '/'.
 Cache folders (__pycache__, .pytest_cache, .ruff_cache) are summarised.
 Excluded: .git, .agents, FILE_STRUCTURE.md.
@@ -12,8 +12,8 @@ Excluded: .git, .agents, FILE_STRUCTURE.md.
 ├── copy_to_tmp.bat (2.07 KB)
 ├── generate-structure.bat (4.54 KB)
 ├── improved_routine.md (7.78 KB)
-├── index.php (1.43 KB)
-├── preview.php (7.07 KB)
+├── index.php (2.17 KB)
+├── preview.php (7.49 KB)
 ├── prompts.txt (0 B)
 ├── README.md (954 B)
 ├── readme.txt (694 B)
@@ -39,27 +39,27 @@ Excluded: .git, .agents, FILE_STRUCTURE.md.
 │   └── trash/
 ├── assets/
 │   ├── css/
-│   │   ├── app.css (32.58 KB)
+│   │   ├── app.css (35.29 KB)
 │   │   ├── dark-theme.css (669 B)
 │   │   ├── light-theme.css (829 B)
 │   │   └── variables.css (105 B)
 │   ├── icons/
 │   ├── js/
-│   │   ├── analytics.js (14.19 KB)
-│   │   ├── app.js (10.29 KB)
-│   │   ├── challenge.js (37.54 KB)
-│   │   ├── habits.js (18.16 KB)
-│   │   ├── storage.js (14.25 KB)
-│   │   ├── theme.js (2.49 KB)
-│   │   └── todos.js (15.87 KB)
+│   │   ├── analytics.js (17.55 KB)
+│   │   ├── app.js (16.67 KB)
+│   │   ├── challenge.js (39.29 KB)
+│   │   ├── habits.js (19.59 KB)
+│   │   ├── storage.js (16.16 KB)
+│   │   ├── theme.js (1.69 KB)
+│   │   └── todos.js (15.30 KB)
 │   └── parsedown/
 │       └── Parsedown.php (52.80 KB)
 ├── components/
-│   ├── analytics-view.php (1.32 KB)
-│   ├── challenge-view.php (3.22 KB)
-│   ├── daily-view.php (4.88 KB)
-│   ├── footer.php (1.76 KB)
-│   ├── header.php (1.95 KB)
+│   ├── analytics-view.php (1.55 KB)
+│   ├── challenge-view.php (3.19 KB)
+│   ├── daily-view.php (4.23 KB)
+│   ├── footer.php (1.85 KB)
+│   ├── header.php (2.70 KB)
 │   ├── journal-view.php (5.56 KB)
 │   ├── navigation.php (749 B)
 │   └── todo-view.php (1.40 KB)

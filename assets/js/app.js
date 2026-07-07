@@ -1,6 +1,6 @@
 /* ============================================================
    app.js – Main entry with keyboard shortcuts, focus mode,
-   tutorial, and notification reminders.
+   tutorial (fixed), and notification reminders.
    ============================================================ */
 
 (function(){
@@ -233,11 +233,14 @@
     App.Storage.save();
   }
 
-  // ---- Tutorial ----
+  // ---- Tutorial (fixed) ----
   function showTour(){
     var overlay = dom.tourOverlay;
     if(!overlay) return;
-    overlay.style.display = "block";
+
+    // If already visible, just bring it to front
+    if(overlay.style.display === "block") return;
+
     var steps = [
       { target: "#hstatCycle", text: "This shows your 21-day progress." },
       { target: "#hstatStreak", text: "Your current streak of quality days." },
@@ -245,25 +248,65 @@
       { target: "#hdrBackup", text: "Backup your data regularly." },
       { target: "#saveDayBtn", text: "Don't forget to save each day!" }
     ];
-    var index = 0;
-    function showStep(i){
-      if(i >= steps.length){ overlay.style.display = "none"; return; }
-      var step = steps[i];
+    var currentStep = 0;
+
+    var tooltip = overlay.querySelector(".tour-tooltip");
+    var textEl = overlay.querySelector("#tourText");
+    var nextBtn = overlay.querySelector(".tour-next");
+    var skipBtn = overlay.querySelector(".tour-skip");
+
+    function updateStep(index){
+      if(index >= steps.length){
+        // Tour finished
+        overlay.style.display = "none";
+        completeTour();
+        return;
+      }
+      var step = steps[index];
       var el = document.querySelector(step.target);
       if(el){
         var rect = el.getBoundingClientRect();
-        var tooltip = overlay.querySelector(".tour-tooltip");
-        tooltip.textContent = step.text;
+        textEl.textContent = step.text;
+        // Position tooltip below the target
         tooltip.style.top = (rect.bottom + 10) + "px";
-        tooltip.style.left = (rect.left + rect.width/2 - 80) + "px";
-        overlay.querySelector(".tour-next").onclick = function(){ showStep(i+1); };
-        overlay.querySelector(".tour-skip").onclick = function(){ overlay.style.display = "none"; };
+        tooltip.style.left = (rect.left + rect.width/2 - 120) + "px";
+        if(index === steps.length - 1){
+          nextBtn.textContent = "Got it!";
+        } else {
+          nextBtn.textContent = "Next →";
+        }
         overlay.style.display = "block";
       } else {
-        showStep(i+1);
+        // target not found, skip to next
+        updateStep(index + 1);
       }
     }
-    showStep(0);
+
+    function completeTour(){
+      App.Storage.state.meta.tourCompleted = true;
+      App.Storage.save();
+    }
+
+    // Click handlers
+    nextBtn.onclick = function(){
+      updateStep(currentStep + 1);
+      currentStep++;
+    };
+    skipBtn.onclick = function(){
+      overlay.style.display = "none";
+      completeTour();
+    };
+    // Click outside tooltip to close (optional)
+    overlay.onclick = function(e){
+      if(e.target === overlay){
+        overlay.style.display = "none";
+        completeTour();
+      }
+    };
+
+    // Start from step 0
+    currentStep = 0;
+    updateStep(0);
   }
 
   // ---- Notification reminder ----
@@ -372,11 +415,11 @@
     App.Challenge.renderCycleDash();
     renderDailyPanel();
 
-    // Show tour on first visit
+    // Show tour only on first visit (and if not completed)
     if(!App.Storage.state.meta.tourCompleted){
-      setTimeout(showTour, 500);
-      App.Storage.state.meta.tourCompleted = true;
-      App.Storage.save();
+      // Delay a bit so the DOM is fully rendered
+      setTimeout(showTour, 600);
+      // Do NOT set tourCompleted here – it will be set when the tour is finished or skipped.
     }
 
     // Notification permission & reminder
