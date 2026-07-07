@@ -316,17 +316,38 @@ tfoot td{padding:12px 14px; border-top:1px solid var(--border);}
 }
 .inline-action:hover{opacity:.9;}
 
+/* ---------- Routine row (fixed: three columns, no extra gap) ---------- */
 .routine-row{
-  display:grid; grid-template-columns:104px minmax(0,1fr) auto; align-items:center; gap:12px;
-  padding:14px 16px; border-bottom:1px solid var(--border); cursor:pointer; transition:all .15s; user-select:none;
+  display:grid;
+  grid-template-columns:104px minmax(0,1fr) auto;
+  align-items:center;
+  gap:12px;
+  padding:14px 16px;
+  border-bottom:1px solid var(--border);
+  cursor:pointer;
+  transition:all .15s;
+  user-select:none;
 }
 .routine-row:last-child{border-bottom:none;}
 .routine-row:hover{background:rgba(59,130,246,.08);}
 .routine-time{font-size:12px; color:var(--text-muted); font-variant-numeric:tabular-nums;}
+.routine-main{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  min-width:0;
+}
 .routine-name{font-size:14px; font-weight:700; color:var(--text-primary);}
-.routine-task{font-size:12px; color:var(--text-muted); margin-top:3px; line-height:1.4;}
-.routine-row.done .routine-name, .routine-row.done .routine-task, .routine-row.done .routine-time{
-  color:var(--text-muted); text-decoration:line-through;
+.routine-task{font-size:12px; color:var(--text-muted); line-height:1.4;}
+.routine-row.done .routine-name,
+.routine-row.done .routine-task,
+.routine-row.done .routine-time{
+  color:var(--text-muted);
+  text-decoration:line-through;
+}
+/* The check-box is the last grid item (auto column) – it will be right-aligned */
+.routine-row .check-box {
+  justify-self: end; /* push checkbox to the right edge of its column */
 }
 
 .today-subjects{display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:10px; margin-bottom:1.25rem;}
@@ -837,3 +858,4 @@ body.focus-mode .view {
   max-width: 300px;
   box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 }
+
