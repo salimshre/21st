@@ -11,8 +11,6 @@
         </div>
       </div>
 
-      <!-- ... rest of the file remains the same ... -->
-
       <div class="prog-head"><div class="sec-lbl" style="margin-bottom:0">Daily progress</div><div class="prog-pct" id="dailyProgPct">0%</div></div>
       <div class="prog-bar"><div class="prog-fill" id="dailyProgFill" style="width:0%"></div></div>
 
@@ -40,6 +38,17 @@
         <div class="today-subjects" id="subject-rotation"></div>
         <div class="sec-lbl">Routine checklist</div>
         <div class="card" id="routine-list"></div>
+
+        <!-- NEW: Add routine step form -->
+        <div class="sec-lbl">Add routine step</div>
+        <div class="card" style="padding: 12px 16px;">
+          <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+            <input type="text" id="routineAddTime" placeholder="Time (e.g. 06:00)" style="flex:1; min-width:100px; border:1px solid var(--border); border-radius:6px; padding:6px 10px; background:var(--dark-bg); color:var(--text-primary);">
+            <input type="text" id="routineAddName" placeholder="Name" style="flex:2; min-width:120px; border:1px solid var(--border); border-radius:6px; padding:6px 10px; background:var(--dark-bg); color:var(--text-primary);">
+            <input type="text" id="routineAddTask" placeholder="Task" style="flex:3; min-width:150px; border:1px solid var(--border); border-radius:6px; padding:6px 10px; background:var(--dark-bg); color:var(--text-primary);">
+            <button type="button" id="routineAddBtn" style="border:none; background:var(--primary); color:#fff; padding:6px 16px; border-radius:6px; font-weight:700; cursor:pointer;">Add</button>
+          </div>
+        </div>
       </div>
 
       <div class="subpanel" id="sub-blocks">
@@ -73,3 +82,4 @@
     </div>
   </section>
 
+  

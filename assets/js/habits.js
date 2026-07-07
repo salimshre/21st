@@ -1,18 +1,13 @@
 /* ============================================================
-   habits.js
-   Owns the "daily log" domain: the fixed 10-item habit list, the
-   17-step routine checklist, the 5 pomodoro blocks, and the day
-   review (rating/journal/priority). This is also where the shape of
-   a day record is defined (emptyDay/normalizeDay) — storage.js calls
-   into these rather than knowing the shape itself, so adding or
-   renaming a habit/block/routine step only ever requires editing
-   this one file.
+   habits.js – owns the daily log domain.
+   Now supports dynamic subject rotation and routine blocks.
    ============================================================ */
 
 App.Habits = (function(){
   "use strict";
   var U = App.Util;
 
+  // fixed 10 habits – unchanged
   var HABITS = [
     {id:"alarm",label:"Alarm clock used (no phone)"},
     {id:"affirm",label:"Affirmation done"},
@@ -25,6 +20,8 @@ App.Habits = (function(){
     {id:"presleep",label:"Pre-sleep note reading"},
     {id:"sleep",label:"Slept by 23:00"}
   ];
+
+  // fixed pomodoro blocks – unchanged
   var BLOCKS = [
     {id:"a",name:"Study A",time:"08:00 – 10:00",target:4},
     {id:"b",name:"Study B",time:"10:20 – 12:20",target:4},
@@ -32,45 +29,28 @@ App.Habits = (function(){
     {id:"d",name:"Study D",time:"15:50 – 17:30",target:3},
     {id:"review",name:"Evening Review",time:"19:00 – 21:00",target:4}
   ];
-  var ROUTINE_BLOCKS = [
-    {id:"wake",time:"06:00 – 06:05",name:"Wake-up",task:"Affirmation, positive thought, today's to-do"},
-    {id:"workout_block",time:"06:05 – 07:30",name:"Workout",task:"Bhutkhel workout according to weekly plan"},
-    {id:"breakfast_block",time:"07:30 – 08:00",name:"Breakfast",task:"Proper breakfast, no screen"},
-    {id:"study_a",time:"08:00 – 10:00",name:"Study A",task:"Step 1 x 4 pomodoros"},
-    {id:"break_1",time:"10:00 – 10:20",name:"Long Break",task:"Walk, water, rest away from desk"},
-    {id:"study_b",time:"10:20 – 12:20",name:"Study B",task:"Step 1 x 4 pomodoros"},
-    {id:"prep",time:"12:20 – 12:30",name:"Prep",task:"Pack steel lunchbox, quick rest"},
-    {id:"lunch_block",time:"12:30 – 13:30",name:"Lunch",task:"Eat lunch, no screen"},
-    {id:"study_c",time:"13:30 – 15:30",name:"Study C",task:"Step 1 x 4 pomodoros"},
-    {id:"break_2",time:"15:30 – 15:50",name:"Long Break",task:"Walk, stretch, hydrate"},
-    {id:"study_d",time:"15:50 – 17:30",name:"Study D",task:"Weak subject or revision, 3 pomodoros"},
-    {id:"free_time",time:"17:30 – 18:00",name:"Free Time",task:"Rest, social, phone, guilt-free"},
-    {id:"dinner",time:"18:00 – 19:00",name:"Dinner",task:"Prep, eat, rest"},
-    {id:"review_block",time:"19:00 – 21:00",name:"Review",task:"Flashcards and today's material only"},
-    {id:"light_work",time:"21:00 – 22:30",name:"Light Work",task:"Blog, project, reading, or creative work"},
-    {id:"wind_down",time:"22:30 – 23:00",name:"Wind-down",task:"Read today's subject notes, one sentence for tomorrow"},
-    {id:"sleep_block",time:"23:00",name:"Sleep",task:"Device off, lights off"}
-  ];
-  var SUBJECT_ROTATION = [
-    ["Numerical Methods","DSA","Architecture","Economics"],
-    ["DSA","Architecture","Numerical Methods","OOAD"],
-    ["Architecture","Economics","DSA","Numerical Methods"],
-    ["Economics","Numerical Methods","OOAD","Architecture"],
-    ["Numerical Methods","OOAD","Economics","DSA"],
-    ["Light review only","Light review only","Light review only","Light review only"],
-    ["Full revision / past papers","Full revision / past papers","Full revision / past papers","Full revision / past papers"]
-  ];
+
   var RLABELS = ["","terrible","bad","rough","below avg","ok","decent","good","great","excellent","perfect"];
   var CHECK_SVG = '<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><polyline points="2,6 5,9 10,3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 
-  /* ---------- day record shape ---------- */
+  // ---- getters for dynamic data ----
+  function getRoutineBlocks() {
+    return App.Storage.getRoutineBlocks();
+  }
+  function getSubjectRotation() {
+    return App.Storage.getSubjectRotation();
+  }
+
+  // ---- day record shape ----
   function emptyDay(){
     var h={}, po={}, rb={};
     HABITS.forEach(function(x){ h[x.id]=false; });
     BLOCKS.forEach(function(x){ po[x.id]=0; });
-    ROUTINE_BLOCKS.forEach(function(x){ rb[x.id]=false; });
+    var blocks = getRoutineBlocks();
+    blocks.forEach(function(b){ rb[b.id]=false; });
     return { h:h, po:po, rb:rb, rating:5, journal:"", priority:"", saved:false, todos:[] };
   }
+
   function normalizeDay(raw){
     var base = emptyDay();
     var d = (raw && typeof raw === "object") ? raw : {};
@@ -79,21 +59,27 @@ App.Habits = (function(){
     for(var k2 in d) out[k2] = d[k2];
     out.h = Object.assign({}, base.h, d.h || {});
     out.po = Object.assign({}, base.po, d.po || {});
-    out.rb = Object.assign({}, base.rb, d.rb || {});
+    // rb: merge with current routine blocks, but keep existing values for ids that exist
+    var currentBlocks = getRoutineBlocks();
+    var rb = {};
+    currentBlocks.forEach(function(b){ rb[b.id] = false; });
+    if (d.rb && typeof d.rb === "object") {
+      Object.keys(d.rb).forEach(function(id) {
+        if (rb.hasOwnProperty(id)) rb[id] = !!d.rb[id];
+      });
+    }
+    out.rb = rb;
     if(typeof out.rating !== "number") out.rating = 5;
     out.journal = typeof out.journal === "string" ? out.journal : "";
     out.priority = typeof out.priority === "string" ? out.priority : "";
     out.saved = !!out.saved;
-    // Todos
-    var rawTodos = d.todos;
-    if (!Array.isArray(rawTodos)) rawTodos = [];
-    out.todos = rawTodos.map(function(t) {
+    out.todos = Array.isArray(d.todos) ? d.todos.map(function(t) {
       return { id: t.id || U.uid(), text: t.text || '', done: !!t.done };
-    });
+    }) : [];
     return out;
   }
 
-  /* ---------- dom ---------- */
+  // ---- DOM cache ----
   var dom = {};
   function cacheDom(){
     dom.sHabits = document.getElementById("sHabits");
@@ -102,7 +88,6 @@ App.Habits = (function(){
     dom.sRating = document.getElementById("sRating");
     dom.dailyProgPct = document.getElementById("dailyProgPct");
     dom.dailyProgFill = document.getElementById("dailyProgFill");
-
     dom.habitsList = document.getElementById("habits-list");
     dom.subjectRotation = document.getElementById("subject-rotation");
     dom.routineList = document.getElementById("routine-list");
@@ -114,9 +99,14 @@ App.Habits = (function(){
     dom.priorityInput = document.getElementById("priorityInput");
     dom.saveDayBtn = document.getElementById("saveDayBtn");
     dom.savedBadge = document.getElementById("savedBadge");
+    // new routine add form elements
+    dom.routineAddTime = document.getElementById("routineAddTime");
+    dom.routineAddName = document.getElementById("routineAddName");
+    dom.routineAddTask = document.getElementById("routineAddTask");
+    dom.routineAddBtn = document.getElementById("routineAddBtn");
   }
 
-  /* ---------- render ---------- */
+  // ---- Render habits (unchanged) ----
   function renderHabits(){
     var d = App.Storage.getDay(App.curKey);
     dom.habitsList.innerHTML = HABITS.map(function(h){
@@ -128,23 +118,160 @@ App.Habits = (function(){
     }).join("");
   }
 
-  function renderRoutine(){
-    var d = App.Storage.getDay(App.curKey);
+  // ---- Render subject rotation (editable) ----
+  function renderSubjectRotation(){
+    var rotation = getSubjectRotation();
     var dow = U.keyToDate(App.curKey).getDay();
-    var subjects = SUBJECT_ROTATION[dow];
-    dom.subjectRotation.innerHTML = ["Study A","Study B","Study C","Study D"].map(function(label,i){
-      return '<div class="subject-chip"><div class="subject-label">'+label+'</div><div class="subject-name">'+subjects[i]+'</div></div>';
+    var subjects = rotation[dow] || ["","","",""];
+    var labels = ["Study A","Study B","Study C","Study D"];
+    var html = labels.map(function(label, idx) {
+      return '<div class="subject-chip">' +
+        '<div class="subject-label">'+label+'</div>' +
+        '<span class="subject-name editable" contenteditable="true" ' +
+          'data-day="'+dow+'" data-block="'+idx+'">' +
+          U.escapeHtml(subjects[idx] || '') +
+        '</span></div>';
     }).join("");
-    dom.routineList.innerHTML = ROUTINE_BLOCKS.map(function(b){
-      var on = !!d.rb[b.id];
-      return '<label class="routine-row'+(on?" done":"")+'" data-routine-id="'+b.id+'">' +
-        '<div class="routine-time">'+b.time+'</div>' +
-        '<div class="routine-main"><div class="routine-name">'+b.name+'</div><div class="routine-task">'+b.task+'</div></div>' +
-        '<input class="native-check" type="checkbox" '+(on?"checked":"")+'>' +
-        '<div class="check-box'+(on?" done":"")+'">'+(on?CHECK_SVG:"")+'</div></label>';
-    }).join("");
+    dom.subjectRotation.innerHTML = html;
+
+    // wire events for subject name changes
+    dom.subjectRotation.querySelectorAll('.subject-name.editable').forEach(function(el) {
+      el.addEventListener('blur', function() {
+        var day = parseInt(this.dataset.day);
+        var block = parseInt(this.dataset.block);
+        var newName = this.textContent.trim() || "Subject";
+        var rotation = getSubjectRotation();
+        if (!rotation[day]) rotation[day] = ["","","",""];
+        rotation[day][block] = newName;
+        App.Storage.setSubjectRotation(rotation);
+        // re-render to reflect changes (though we already updated)
+        renderSubjectRotation();
+      });
+      el.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
+      });
+    });
   }
 
+  // ---- Render routine checklist (editable, draggable, deletable) ----
+  function renderRoutine(){
+    var d = App.Storage.getDay(App.curKey);
+    var blocks = getRoutineBlocks();
+    var html = blocks.map(function(b, index) {
+      var on = !!d.rb[b.id];
+      return '<div class="routine-row'+(on?" done":"")+'" data-routine-id="'+b.id+'" draggable="true">' +
+        '<span class="routine-drag-handle" title="Drag to reorder">⋮⋮</span>' +
+        '<div class="routine-time editable" contenteditable="true" data-field="time">'+U.escapeHtml(b.time)+'</div>' +
+        '<div class="routine-main">' +
+          '<div class="routine-name editable" contenteditable="true" data-field="name">'+U.escapeHtml(b.name)+'</div>' +
+          '<div class="routine-task editable" contenteditable="true" data-field="task">'+U.escapeHtml(b.task)+'</div>' +
+        '</div>' +
+        '<input class="native-check" type="checkbox" '+(on?"checked":"")+'>' +
+        '<div class="check-box'+(on?" done":"")+'">'+(on?CHECK_SVG:"")+'</div>' +
+        '<button class="routine-delete" data-id="'+b.id+'" title="Delete this step">✕</button>' +
+        '</div>';
+    }).join("");
+    dom.routineList.innerHTML = html;
+
+    // wire events: checkbox toggle, delete, editable blur, drag-drop
+    dom.routineList.querySelectorAll('.routine-row').forEach(function(row) {
+      var id = row.dataset.routineId;
+
+      // checkbox
+      var checkbox = row.querySelector('.native-check');
+      checkbox.addEventListener('change', function() {
+        App.Storage.mutateDay(App.curKey, function(d){ d.rb[id] = !d.rb[id]; });
+        var on = App.Storage.state.days[App.curKey].rb[id];
+        row.classList.toggle('done', on);
+        row.querySelector('.check-box').classList.toggle('done', on);
+        row.querySelector('.check-box').innerHTML = on ? CHECK_SVG : "";
+        App.Habits.updateDailyStats();
+      });
+
+      // delete
+      var delBtn = row.querySelector('.routine-delete');
+      delBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (confirm('Delete this routine step?')) {
+          var blocks = getRoutineBlocks();
+          var newBlocks = blocks.filter(function(b) { return b.id !== id; });
+          App.Storage.setRoutineBlocks(newBlocks);
+          renderRoutine();
+          App.Habits.updateDailyStats();
+        }
+      });
+
+      // editable fields
+      row.querySelectorAll('.editable').forEach(function(el) {
+        el.addEventListener('blur', function() {
+          var field = this.dataset.field;
+          var newValue = this.textContent.trim();
+          if (newValue === '') newValue = field === 'time' ? '00:00' : field === 'name' ? 'Step' : 'Task';
+          var blocks = getRoutineBlocks();
+          var block = blocks.find(function(b) { return b.id === id; });
+          if (block) {
+            block[field] = newValue;
+            App.Storage.setRoutineBlocks(blocks);
+          }
+        });
+        el.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter') { e.preventDefault(); this.blur(); }
+        });
+      });
+    });
+
+    // drag & drop reordering
+    var rows = dom.routineList.querySelectorAll('.routine-row');
+    var dragSrcIndex = null;
+    rows.forEach(function(row, idx) {
+      row.addEventListener('dragstart', function(e) {
+        dragSrcIndex = idx;
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', this.dataset.routineId);
+      });
+      row.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+      });
+      row.addEventListener('drop', function(e) {
+        e.preventDefault();
+        var targetIndex = Array.from(rows).indexOf(this);
+        if (dragSrcIndex !== null && dragSrcIndex !== targetIndex) {
+          var blocks = getRoutineBlocks();
+          var item = blocks.splice(dragSrcIndex, 1)[0];
+          blocks.splice(targetIndex, 0, item);
+          App.Storage.setRoutineBlocks(blocks);
+          renderRoutine();
+          App.Habits.updateDailyStats();
+        }
+        dragSrcIndex = null;
+      });
+    });
+  }
+
+  // ---- Add new routine step ----
+  function addRoutineStep() {
+    var time = dom.routineAddTime.value.trim() || "00:00";
+    var name = dom.routineAddName.value.trim() || "New step";
+    var task = dom.routineAddTask.value.trim() || "";
+    if (!name) return;
+    var blocks = getRoutineBlocks();
+    var newBlock = {
+      id: U.uid(),
+      time: time,
+      name: name,
+      task: task
+    };
+    blocks.push(newBlock);
+    App.Storage.setRoutineBlocks(blocks);
+    dom.routineAddTime.value = "";
+    dom.routineAddName.value = "";
+    dom.routineAddTask.value = "";
+    renderRoutine();
+    App.Habits.updateDailyStats();
+  }
+
+  // ---- Render pomodoro blocks (unchanged) ----
   function renderBlockRowHtml(b){
     var d = App.Storage.getDay(App.curKey);
     var count = d.po[b.id] || 0;
@@ -165,6 +292,7 @@ App.Habits = (function(){
     dom.blocksList.innerHTML = BLOCKS.map(renderBlockRowHtml).join("");
   }
 
+  // ---- Render review (unchanged) ----
   function renderReview(){
     var d = App.Storage.getDay(App.curKey);
     dom.rSlider.value = d.rating;
@@ -174,54 +302,72 @@ App.Habits = (function(){
     dom.priorityInput.value = d.priority || "";
   }
 
+  // ---- Refresh saved badge ----
   function refreshSavedBadge(){
     var d = App.Storage.getDay(App.curKey);
     dom.savedBadge.classList.toggle("show", !!d.saved);
   }
 
-  function updateDailyStats(){
-  var d = App.Storage.getDay(App.curKey);
-  var hc = HABITS.filter(function(h){ return d.h[h.id]; }).length;
-  var rc = ROUTINE_BLOCKS.filter(function(b){ return d.rb[b.id]; }).length;
-  var totalP = Object.values(d.po).reduce(function(a,b){ return a+b; }, 0);
-  dom.sHabits.textContent = hc + "/" + HABITS.length;
-  dom.sRoutine.textContent = rc + "/" + ROUTINE_BLOCKS.length;
-  dom.sPomos.textContent = totalP;
-  dom.sRating.textContent = d.rating;
-  var targetP = BLOCKS.reduce(function(a,b){ return a+b.target; }, 0);
-
-  // --- Todo progress (NEW) ---
-  var todos = d.todos || [];
-  var todoDone = todos.filter(function(t){ return t.done; }).length;
-  var todoTotal = todos.length;
-  var todoScore = todoTotal > 0 ? todoDone / todoTotal : 1; // if no todos, consider it 100% for that part
-
-  var pct = Math.round(
-    (hc / HABITS.length * 0.35) +
-    (rc / ROUTINE_BLOCKS.length * 0.30) +
-    (Math.min(totalP / targetP, 1) * 0.20) +
-    (todoScore * 0.15)
-  );
-
-  dom.dailyProgPct.textContent = pct + "%";
-  dom.dailyProgFill.style.width = pct + "%";
-  refreshSavedBadge();
-  // Also update todos stat if available
-  if (typeof App.Todos !== 'undefined' && App.Todos.updateTodoStats) {
-    App.Todos.updateTodoStats();
+  // ---- Update daily stats (uses dynamic routine length) ----
+  function updateDailyStats() {
+    var d = App.Storage.getDay(App.curKey);
+    var hc = HABITS.filter(function(h){ return d.h[h.id]; }).length;
+    var blocks = getRoutineBlocks();
+    var rc = blocks.filter(function(b){ return d.rb[b.id]; }).length;
+    var totalP = Object.values(d.po).reduce(function(a,b){ return a+b; }, 0);
+    dom.sHabits.textContent = hc + "/" + HABITS.length;
+    dom.sRoutine.textContent = rc + "/" + blocks.length;
+    dom.sPomos.textContent = totalP;
+    dom.sRating.textContent = d.rating;
+    var targetP = BLOCKS.reduce(function(a,b){ return a+b.target; }, 0);
+    var todos = d.todos || [];
+    var todoDone = todos.filter(function(t){ return t.done; }).length;
+    var todoTotal = todos.length;
+    var todoScore = todoTotal > 0 ? todoDone / todoTotal : 1;
+    var pct = Math.round(
+      (hc / HABITS.length * 0.35) +
+      (rc / (blocks.length || 1) * 0.30) +
+      (Math.min(totalP / targetP, 1) * 0.20) +
+      (todoScore * 0.15)
+    );
+    dom.dailyProgPct.textContent = pct + "%";
+    dom.dailyProgFill.style.width = pct + "%";
+    refreshSavedBadge();
+    if (typeof App.Todos !== 'undefined' && App.Todos.updateTodoStats) {
+      App.Todos.updateTodoStats();
+    }
   }
-}
 
-  function renderDailyPanel(){
+  // ---- Render all daily panels ----
+  function renderDailyPanel() {
     renderHabits();
+    renderSubjectRotation();
     renderRoutine();
     renderBlocks();
     renderReview();
     updateDailyStats();
   }
 
-  /* ---------- events ---------- */
+  // ---- Export CSV (uses dynamic routine) ----
+  function exportCsv(){
+    var state = App.Storage.state;
+    var dates = Object.keys(state.days).sort();
+    var blocks = getRoutineBlocks();
+    var header = ["Date","Saved","Habits Done","Habits Total","Routine Done","Routine Total","Pomodoros","Rating","Priority","Journal"];
+    var rows = [header];
+    dates.forEach(function(key){
+      var d = normalizeDay(state.days[key]);
+      var hc = HABITS.filter(function(h){ return d.h[h.id]; }).length;
+      var rc = blocks.filter(function(b){ return d.rb[b.id]; }).length;
+      var totalP = Object.values(d.po).reduce(function(a,b){ return a+b; }, 0);
+      rows.push([key, d.saved?"Yes":"No", hc, HABITS.length, rc, blocks.length, totalP, d.rating, d.priority||"", d.journal||""]);
+    });
+    U.downloadBlob(U.toCsv(rows), "text/csv;charset=utf-8;", "daily-log-"+U.todayKey()+".csv");
+  }
+
+  // ---- Init and wire events ----
   function wireEvents(){
+    // habits checkbox change
     dom.habitsList.addEventListener("change", function(e){
       var row = e.target.closest("[data-habit-id]");
       if(!row) return;
@@ -234,18 +380,7 @@ App.Habits = (function(){
       updateDailyStats();
     });
 
-    dom.routineList.addEventListener("change", function(e){
-      var row = e.target.closest("[data-routine-id]");
-      if(!row) return;
-      var id = row.dataset.routineId;
-      App.Storage.mutateDay(App.curKey, function(d){ d.rb[id] = !d.rb[id]; });
-      var on = App.Storage.state.days[App.curKey].rb[id];
-      row.classList.toggle("done", on);
-      row.querySelector(".check-box").classList.toggle("done", on);
-      row.querySelector(".check-box").innerHTML = on ? CHECK_SVG : "";
-      updateDailyStats();
-    });
-
+    // pomodoro block clicks
     dom.blocksList.addEventListener("click", function(e){
       var btn = e.target.closest(".p-btn");
       if(!btn) return;
@@ -258,6 +393,7 @@ App.Habits = (function(){
       updateDailyStats();
     });
 
+    // rating slider
     dom.rSlider.addEventListener("input", function(){
       var v = parseInt(dom.rSlider.value, 10);
       App.Storage.mutateDay(App.curKey, function(d){ d.rating = v; });
@@ -272,27 +408,19 @@ App.Habits = (function(){
       App.Storage.mutateDay(App.curKey, function(d){ d.priority = dom.priorityInput.value; });
     });
 
+    // save day
     dom.saveDayBtn.addEventListener("click", function(){
       App.Storage.mutateDay(App.curKey, function(d){ d.saved = true; });
       refreshSavedBadge();
       App.renderHeader();
       U.showToast("Saved ✓");
     });
-  }
 
-  function exportCsv(){
-    var state = App.Storage.state;
-    var dates = Object.keys(state.days).sort();
-    var header = ["Date","Saved","Habits Done","Habits Total","Routine Done","Routine Total","Pomodoros","Rating","Priority","Journal"];
-    var rows = [header];
-    dates.forEach(function(key){
-      var d = normalizeDay(state.days[key]);
-      var hc = HABITS.filter(function(h){ return d.h[h.id]; }).length;
-      var rc = ROUTINE_BLOCKS.filter(function(b){ return d.rb[b.id]; }).length;
-      var totalP = Object.values(d.po).reduce(function(a,b){ return a+b; }, 0);
-      rows.push([key, d.saved?"Yes":"No", hc, HABITS.length, rc, ROUTINE_BLOCKS.length, totalP, d.rating, d.priority||"", d.journal||""]);
+    // routine add button
+    dom.routineAddBtn.addEventListener('click', addRoutineStep);
+    dom.routineAddName.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') addRoutineStep();
     });
-    U.downloadBlob(U.toCsv(rows), "text/csv;charset=utf-8;", "daily-log-"+U.todayKey()+".csv");
   }
 
   function init(){
@@ -301,12 +429,18 @@ App.Habits = (function(){
   }
 
   return {
-    HABITS: HABITS, BLOCKS: BLOCKS, ROUTINE_BLOCKS: ROUTINE_BLOCKS,
-    SUBJECT_ROTATION: SUBJECT_ROTATION, RLABELS: RLABELS, CHECK_SVG: CHECK_SVG,
-    emptyDay: emptyDay, normalizeDay: normalizeDay,
-    init: init, renderDailyPanel: renderDailyPanel, updateDailyStats: updateDailyStats,
-    refreshSavedBadge: refreshSavedBadge, exportCsv: exportCsv
+    HABITS: HABITS,
+    BLOCKS: BLOCKS,
+    getRoutineBlocks: getRoutineBlocks,
+    getSubjectRotation: getSubjectRotation,
+    emptyDay: emptyDay,
+    normalizeDay: normalizeDay,
+    init: init,
+    renderDailyPanel: renderDailyPanel,
+    updateDailyStats: updateDailyStats,
+    refreshSavedBadge: refreshSavedBadge,
+    exportCsv: exportCsv,
+    CHECK_SVG: CHECK_SVG
   };
 })();
-
 

@@ -729,3 +729,50 @@ tfoot td{padding:12px 14px; border-top:1px solid var(--border);}
   color: var(--danger);
   border: 1px solid rgba(239, 68, 68, 0.2);
 }
+
+/* ---- Editable fields (subject rotation & routine) ---- */
+.editable {
+  cursor: text;
+  border-radius: 4px;
+  padding: 1px 4px;
+  transition: background 0.15s;
+}
+.editable:hover {
+  background: var(--card-bg-soft);
+}
+.editable:focus {
+  outline: 2px solid var(--primary);
+  background: var(--card-bg-soft);
+}
+
+/* ---- Routine drag handle & delete ---- */
+.routine-drag-handle {
+  color: var(--text-muted);
+  font-size: 18px;
+  cursor: grab;
+  user-select: none;
+  margin-right: 4px;
+  opacity: 0.5;
+}
+.routine-row:hover .routine-drag-handle {
+  opacity: 1;
+}
+.routine-delete {
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  opacity: 0.5;
+  transition: opacity 0.15s, background 0.15s;
+}
+.routine-row:hover .routine-delete {
+  opacity: 1;
+}
+.routine-delete:hover {
+  background: var(--danger-soft);
+  color: #fca5a5;
+}
+

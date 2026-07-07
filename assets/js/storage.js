@@ -1,23 +1,7 @@
 /* ============================================================
    storage.js
-   Loads FIRST. Defines the shared App namespace plus two things:
-
-   1. App.Util — small stateless helpers (date-key math, clamp, uid,
-      CSV/download/toast) used by every other module.
-
-   2. App.Storage — the generic persistence engine: localStorage I/O,
-      legacy-data migration, schema validation, and state access
-      (getDay/mutateDay). It deliberately does NOT know what a
-      "habit" or "category" is — for the parts of the data shape that
-      are domain-specific (the day record's fields, the cycle's
-      activities/categories), it delegates to App.Habits.emptyDay()/
-      normalizeDay() and App.Challenge.defaultCycle()/sanitizeCycle().
-
-   That delegation means App.Storage only calls into App.Habits /
-   App.Challenge at RUN time (inside functions, never at file-parse
-   time), so script load order doesn't matter for those calls — by
-   the time anything actually runs (after app.js's init()), every
-   module is loaded. See app.js for the load order and init sequence.
+   Loads FIRST. Defines App.Util and App.Storage.
+   Now also manages subjectRotation and routineBlocks.
    ============================================================ */
 
 window.App = window.App || {};
@@ -85,7 +69,7 @@ App.Storage = (function(){
   "use strict";
   var U = App.Util;
 
-  var SCHEMA_VERSION = 1;
+  var SCHEMA_VERSION = 2;
   var STORAGE_KEY = "routineos_unified_v1";
   var LEGACY_CYCLE_KEY = "challenge21_v2";
   var LEGACY_DAY_PREFIX = "day:";
@@ -93,6 +77,43 @@ App.Storage = (function(){
   var state = null;
   var migrated = false;
 
+  // ---- default subject rotation ----
+  function defaultSubjectRotation() {
+    return [
+      ["Numerical Methods","DSA","Architecture","Economics"],
+      ["DSA","Architecture","Numerical Methods","OOAD"],
+      ["Architecture","Economics","DSA","Numerical Methods"],
+      ["Economics","Numerical Methods","OOAD","Architecture"],
+      ["Numerical Methods","OOAD","Economics","DSA"],
+      ["Light review only","Light review only","Light review only","Light review only"],
+      ["Full revision / past papers","Full revision / past papers","Full revision / past papers","Full revision / past papers"]
+    ];
+  }
+
+  // ---- default routine blocks ----
+  function defaultRoutineBlocks() {
+    return [
+      { id: U.uid(), time: "06:00 – 06:05", name: "Wake-up", task: "Affirmation, positive thought, today's to-do" },
+      { id: U.uid(), time: "06:05 – 07:30", name: "Workout", task: "Bhutkhel workout according to weekly plan" },
+      { id: U.uid(), time: "07:30 – 08:00", name: "Breakfast", task: "Proper breakfast, no screen" },
+      { id: U.uid(), time: "08:00 – 10:00", name: "Study A", task: "Step 1 x 4 pomodoros" },
+      { id: U.uid(), time: "10:00 – 10:20", name: "Long Break", task: "Walk, water, rest away from desk" },
+      { id: U.uid(), time: "10:20 – 12:20", name: "Study B", task: "Step 1 x 4 pomodoros" },
+      { id: U.uid(), time: "12:20 – 12:30", name: "Prep", task: "Pack steel lunchbox, quick rest" },
+      { id: U.uid(), time: "12:30 – 13:30", name: "Lunch", task: "Eat lunch, no screen" },
+      { id: U.uid(), time: "13:30 – 15:30", name: "Study C", task: "Step 1 x 4 pomodoros" },
+      { id: U.uid(), time: "15:30 – 15:50", name: "Long Break", task: "Walk, stretch, hydrate" },
+      { id: U.uid(), time: "15:50 – 17:30", name: "Study D", task: "Weak subject or revision, 3 pomodoros" },
+      { id: U.uid(), time: "17:30 – 18:00", name: "Free Time", task: "Rest, social, phone, guilt-free" },
+      { id: U.uid(), time: "18:00 – 19:00", name: "Dinner", task: "Prep, eat, rest" },
+      { id: U.uid(), time: "19:00 – 21:00", name: "Review", task: "Flashcards and today's material only" },
+      { id: U.uid(), time: "21:00 – 22:30", name: "Light Work", task: "Blog, project, reading, or creative work" },
+      { id: U.uid(), time: "22:30 – 23:00", name: "Wind-down", task: "Read today's subject notes, one sentence for tomorrow" },
+      { id: U.uid(), time: "23:00", name: "Sleep", task: "Device off, lights off" }
+    ];
+  }
+
+  // ---- sanitisation helpers ----
   function sanitizeMeta(meta){
     var m = (meta && typeof meta === "object") ? meta : {};
     return {
@@ -156,17 +177,6 @@ App.Storage = (function(){
     return out;
   }
 
-  function sanitizeState(s){
-    return {
-      schemaVersion: SCHEMA_VERSION,
-      meta: sanitizeMeta(s && s.meta),
-      cycle: App.Challenge.sanitizeCycle(s && s.cycle),
-      history: sanitizeHistory(s && s.history),
-      cycleTemplates: sanitizeCycleTemplates(s && s.cycleTemplates),
-      challengeNotes: sanitizeChallengeNotes(s && s.challengeNotes),
-      days: sanitizeDays(s && s.days)
-    };
-  }
   function sanitizeDays(days){
     var out = {};
     var d = (days && typeof days === "object") ? days : {};
@@ -176,10 +186,47 @@ App.Storage = (function(){
     return out;
   }
 
+  function sanitizeSubjectRotation(data){
+    var def = defaultSubjectRotation();
+    if (!data || !Array.isArray(data) || data.length !== 7) return def;
+    return data.map(function(day, idx) {
+      if (!Array.isArray(day) || day.length !== 4) return def[idx];
+      return day.map(function(s) { return typeof s === "string" ? s : ""; });
+    });
+  }
+
+  function sanitizeRoutineBlocks(data){
+    var def = defaultRoutineBlocks();
+    if (!Array.isArray(data) || data.length === 0) return def;
+    return data.map(function(item) {
+      return {
+        id: typeof item.id === "string" ? item.id : U.uid(),
+        time: typeof item.time === "string" ? item.time : "",
+        name: typeof item.name === "string" ? item.name : "",
+        task: typeof item.task === "string" ? item.task : ""
+      };
+    });
+  }
+
+  function sanitizeState(s){
+    return {
+      schemaVersion: SCHEMA_VERSION,
+      meta: sanitizeMeta(s && s.meta),
+      cycle: App.Challenge.sanitizeCycle(s && s.cycle),
+      history: sanitizeHistory(s && s.history),
+      cycleTemplates: sanitizeCycleTemplates(s && s.cycleTemplates),
+      challengeNotes: sanitizeChallengeNotes(s && s.challengeNotes),
+      days: sanitizeDays(s && s.days),
+      subjectRotation: sanitizeSubjectRotation(s && s.subjectRotation),
+      routineBlocks: sanitizeRoutineBlocks(s && s.routineBlocks)
+    };
+  }
+
   function isValidUnified(s){
     return !!(s && typeof s === "object" && s.cycle && Array.isArray(s.cycle.activities) &&
       s.cycle.checks && typeof s.cycle.checks === "object" && typeof s.cycle.startDate === "string");
   }
+
   function isLegacyCycleBackup(s){
     return !!(s && typeof s === "object" && Array.isArray(s.activities) &&
       s.checks && typeof s.checks === "object" && typeof s.startDate === "string");
@@ -187,7 +234,7 @@ App.Storage = (function(){
 
   function tryMigrateLegacy(){
     var found = false;
-    var result = { cycle: null, days: {} };
+    var result = { cycle: null, days: {}, subjectRotation: null, routineBlocks: null };
     try{
       var raw = localStorage.getItem(LEGACY_CYCLE_KEY);
       if(raw){
@@ -212,6 +259,8 @@ App.Storage = (function(){
     }catch(e){}
     if(!found) return null;
     if(!result.cycle) result.cycle = App.Challenge.defaultCycle();
+    if(!result.subjectRotation) result.subjectRotation = defaultSubjectRotation();
+    if(!result.routineBlocks) result.routineBlocks = defaultRoutineBlocks();
     return result;
   }
 
@@ -225,7 +274,12 @@ App.Storage = (function(){
       var raw = localStorage.getItem(STORAGE_KEY);
       if(raw){
         var parsed = JSON.parse(raw);
-        if(parsed && parsed.cycle) return sanitizeState(parsed);
+        if(parsed && parsed.cycle) {
+          // migrate older versions
+          if (!parsed.subjectRotation) parsed.subjectRotation = defaultSubjectRotation();
+          if (!parsed.routineBlocks) parsed.routineBlocks = defaultRoutineBlocks();
+          return sanitizeState(parsed);
+        }
       }
     }catch(e){ console.error("Could not read saved tracker data:", e); }
 
@@ -236,13 +290,21 @@ App.Storage = (function(){
       persist(sanitized);
       return sanitized;
     }
-    return sanitizeState({ cycle: App.Challenge.defaultCycle(), days: {} });
+    // fresh start
+    return sanitizeState({
+      cycle: App.Challenge.defaultCycle(),
+      days: {},
+      subjectRotation: defaultSubjectRotation(),
+      routineBlocks: defaultRoutineBlocks()
+    });
   }
 
   function init(){
     state = load();
   }
+
   function save(){ persist(state); }
+
   function markBackupDownloaded(filename){
     if(!state.meta) state.meta = sanitizeMeta({});
     state.meta.lastBackupAt = new Date().toISOString();
@@ -253,6 +315,7 @@ App.Storage = (function(){
   function getDay(key){
     return state.days[key] ? App.Habits.normalizeDay(state.days[key]) : App.Habits.emptyDay();
   }
+
   function mutateDay(key, fn){
     if(!state.days[key]) state.days[key] = App.Habits.emptyDay();
     fn(state.days[key]);
@@ -263,8 +326,25 @@ App.Storage = (function(){
     state = sanitizeState(newState);
     save();
   }
+
   function replaceCycle(newCycle){
     state.cycle = App.Challenge.sanitizeCycle(newCycle);
+    save();
+  }
+
+  // ---- new getters/setters ----
+  function getSubjectRotation() {
+    return state.subjectRotation || defaultSubjectRotation();
+  }
+  function setSubjectRotation(rotation) {
+    state.subjectRotation = sanitizeSubjectRotation(rotation);
+    save();
+  }
+  function getRoutineBlocks() {
+    return state.routineBlocks || defaultRoutineBlocks();
+  }
+  function setRoutineBlocks(blocks) {
+    state.routineBlocks = sanitizeRoutineBlocks(blocks);
     save();
   }
 
@@ -281,6 +361,12 @@ App.Storage = (function(){
     sanitizeState: sanitizeState,
     isValidUnified: isValidUnified,
     isLegacyCycleBackup: isLegacyCycleBackup,
-    get migrated(){ return migrated; }
+    get migrated(){ return migrated; },
+    getSubjectRotation: getSubjectRotation,
+    setSubjectRotation: setSubjectRotation,
+    getRoutineBlocks: getRoutineBlocks,
+    setRoutineBlocks: setRoutineBlocks,
+    defaultSubjectRotation: defaultSubjectRotation,
+    defaultRoutineBlocks: defaultRoutineBlocks
   };
 })();
