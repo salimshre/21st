@@ -16,9 +16,8 @@ $allowedFiles = [
 
 // ---- 2. Get the requested file ----
 $file = $_GET['file'] ?? '';
-$file = ltrim($file, '/'); // remove leading slash
-$file = urldecode($file);  // decode URL-encoded characters (like spaces, +, etc.)
-
+$file = ltrim($file, '/');
+$file = urldecode($file);
 
 // ---- 3. Security checks ----
 // a) Prevent directory traversal
@@ -35,7 +34,6 @@ $isJournal = false;
 if (preg_match('#^journal/.*\.md$#', $file)) {
     $isJournal = true;
 }
-
 
 if (!$isAllowed && !$isJournal) {
     http_response_code(403);
@@ -58,7 +56,7 @@ $parsedown = new Parsedown();
 $markdown = file_get_contents($path);
 $html = $parsedown->text($markdown);
 
-// ---- 7. Output a clean HTML page with the app’s theme ----
+// ---- 7. Output a clean HTML page with the app’s theme and syntax highlighting ----
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -70,8 +68,9 @@ $html = $parsedown->text($markdown);
     <link rel="stylesheet" href="assets/css/light-theme.css">
     <link rel="stylesheet" href="assets/css/dark-theme.css">
     <link rel="stylesheet" href="assets/css/app.css">
+    <!-- highlight.js for syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/default.min.css">
     <style>
-        /* Custom styles for the preview page */
         body {
             background: var(--dark-bg);
             color: var(--text-primary);
@@ -190,7 +189,6 @@ $html = $parsedown->text($markdown);
             background: #0f172a;
             border-color: #334155;
         }
-        /* Responsive */
         @media (max-width: 680px) {
             body { padding: 16px; }
             .markdown-body { padding: 16px; }
@@ -222,6 +220,16 @@ $html = $parsedown->text($markdown);
                 document.documentElement.setAttribute("data-theme", "light");
             }
         })();
+    </script>
+
+    <!-- Syntax highlighting -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('pre code').forEach(function(block) {
+                hljs.highlightElement(block);
+            });
+        });
     </script>
 </body>
 </html>

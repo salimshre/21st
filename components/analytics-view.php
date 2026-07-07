@@ -12,6 +12,12 @@
       <div class="sec-lbl">Routine block insights (last 7 days)</div>
       <div class="card" id="routineInsights"></div>
 
+      <div class="sec-lbl">Individual habit streaks</div>
+      <div class="card" id="habitStreaks"></div>
+
+      <div class="sec-lbl">Monthly summary (last 4 weeks)</div>
+      <div class="analytics-grid" id="monthlySummary"></div>
+
       <div class="sec-lbl">Todo completion (last 7 days)</div>
       <div class="card" id="todoInsights"></div>
 
@@ -31,9 +37,6 @@
       </div>
 
       <?php include __DIR__ . '/journal-view.php'; ?>
-
-
-
-
     </div>
   </section>
+  

@@ -30,8 +30,19 @@
         <span class="ico" aria-hidden="true">💾</span>
         <span class="hstat-text"><span class="val" id="hdrBackup">Backup</span><span class="lbl">Data</span></span>
       </button>
+      <button type="button" class="hstat" id="quickStartCycle" title="Start next 21-day cycle">
+        <span class="ico" aria-hidden="true">🔄</span>
+        <span class="hstat-text"><span class="val">Next</span><span class="lbl">Cycle</span></span>
+      </button>
+      <button type="button" class="hstat" id="focusToggle" title="Focus mode">
+        <span class="ico" aria-hidden="true">🔲</span>
+        <span class="hstat-text"><span class="val">Focus</span><span class="lbl">Mode</span></span>
+      </button>
+      <button type="button" class="hstat" id="helpBtn" title="Help">
+        <span class="ico" aria-hidden="true">❓</span>
+        <span class="hstat-text"><span class="val">Help</span><span class="lbl">Tour</span></span>
+      </button>
       <button type="button" class="theme-toggle" id="themeToggle" aria-label="Switch to dark mode" title="Switch to dark mode">🌙</button>
     </div>
   </div>
 </header>
-

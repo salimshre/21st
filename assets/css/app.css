@@ -784,3 +784,111 @@ tfoot td{padding:12px 14px; border-top:1px solid var(--border);}
   color: #fca5a5;
 }
 
+
+/* ---- Mobile responsiveness for 21-day grid ---- */
+@media (max-width: 768px) {
+  .table-shell {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  #cycleTable th.col-day,
+  #cycleTable td.col-day {
+    min-width: 40px;
+    padding: 4px 2px;
+    font-size: 10px;
+  }
+  #cycleTable .chk {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+  }
+  .dcard-cats { flex-direction: column; }
+  .header-stats .hstat .lbl { display: none; }
+  .brand-text .tag { display: none; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+  .view { padding: 12px 10px; }
+}
+
+/* ---- Animations ---- */
+.habit-row, .routine-row, .challenge-row {
+  transition: background 0.2s, padding-left 0.2s;
+}
+.habit-row:hover, .routine-row:hover, .challenge-row:hover {
+  background: var(--card-bg-soft);
+}
+.check-box {
+  transition: transform 0.2s, background 0.2s;
+}
+.check-box.done {
+  transform: scale(1.1);
+}
+.chk {
+  transition: transform 0.15s;
+}
+.chk.on {
+  transform: scale(1.1);
+}
+.pomo-dot {
+  transition: background 0.2s, transform 0.2s;
+}
+.pomo-dot.on {
+  transform: scale(1.2);
+}
+
+/* ---- Toast types ---- */
+.toast-success { background: var(--success); color: #fff; }
+.toast-error { background: var(--danger); color: #fff; }
+.toast-warning { background: var(--warning); color: #000; }
+
+/* ---- Focus mode ---- */
+body.focus-mode .app-header,
+body.focus-mode .maintabs,
+body.focus-mode .daynav,
+body.focus-mode .app-footer {
+  display: none !important;
+}
+body.focus-mode .view {
+  padding-top: 10px;
+}
+
+/* ---- Modal for manage ---- */
+.modal-overlay {
+  position: fixed;
+  top:0; left:0; right:0; bottom:0;
+  background: rgba(0,0,0,0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+.modal-content {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  padding: 24px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+.modal-content h2 { margin-top: 0; }
+.manage-item {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.manage-item input { flex: 1; }
+.manage-delete { background: none; border: none; color: var(--danger); cursor: pointer; }
+.manage-add { display: flex; gap: 8px; margin: 12px 0; flex-wrap: wrap; }
+.manage-close { margin-top: 12px; }
+
+/* ---- Tour overlay ---- */
+#tourOverlay .tour-tooltip {
+  position: absolute;
+  background: var(--card-bg);
+  padding: 16px;
+  border-radius: 8px;
+  max-width: 300px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+

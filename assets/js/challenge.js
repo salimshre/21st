@@ -1,20 +1,6 @@
 /* ============================================================
-   challenge.js
-   Owns the "21-day challenge" domain: categories, the cycle's
-   activities/checks grid, and everything derived from it — cycle
-   stats, the 21-Day view's dashboard + scrollable table, and the
-   "Today's 21-day challenge" checklist that appears grouped by
-   Habit Category inside the Daily view's Habits subtab.
-
-   This is also where the shape of a cycle record is defined
-   (defaultCycle/sanitizeCycle) — storage.js calls into these
-   rather than knowing the shape itself, mirroring how habits.js
-   owns emptyDay/normalizeDay for the daily-log domain.
-
-   The checklist here and the grid in the 21-Day view both read and
-   write the SAME underlying data (App.Storage.state.cycle) — there
-   is only one source of truth, so checking a task off in either
-   place keeps the other in sync automatically.
+   challenge.js – 21-Day challenge with reorder, multiple cycles,
+   memoised stats, and quick start from header.
    ============================================================ */
 
 App.Challenge = (function(){
@@ -36,8 +22,6 @@ App.Challenge = (function(){
   };
   var CAT_ORDER = ["mind","learning","discipline","health","diet"];
 
-  // Seeds real prior progress (Day 1–18) so the app opens reflecting where the
-  // user actually is, instead of starting blank. Index 0 = Day 1 ... Index 20 = Day 21.
   var DEFAULT_ACTIVITIES = [
     {name:"Affirmation",      cat:"mind",       checks:[1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,1,0,0,0]},
     {name:"Meditate (5m)",    cat:"mind",       checks:[1,1,1,1,0,1,0,1,0,0,0,0,0,0,0,0,0,1,0,0,0]},
@@ -63,7 +47,7 @@ App.Challenge = (function(){
   ];
   var SEED_START_DATE = "2026-06-03";
 
-  /* ---------- cycle record shape ---------- */
+  // ---- Cycle shape ----
   function defaultCycle(){
     var acts = DEFAULT_ACTIVITIES.map(function(a){ return { id:U.uid(), name:a.name, cat:a.cat }; });
     var checks = {};
@@ -96,41 +80,65 @@ App.Challenge = (function(){
     return c;
   }
 
-  /* ---------- derived data ---------- */
-  function cloneCycle(cycle){
-    return sanitizeCycle(JSON.parse(JSON.stringify(cycle)));
+  // ---- Memoised stats ----
+  var _statsCache = {};
+  function computeCycleStats(cycle){
+    var key = cycle ? JSON.stringify(cycle) : "current";
+    if(_statsCache[key]) return _statsCache[key];
+    cycle = cycle || App.Storage.state.cycle;
+    var totalChecked = 0, totalCells = 0;
+    var catChecked = {}, catTotal = {};
+    CAT_ORDER.forEach(function(c){ catChecked[c]=0; catTotal[c]=0; });
+    cycle.activities.forEach(function(a){
+      var arr = cycle.checks[a.id] || [];
+      var c = arr.filter(Boolean).length;
+      totalChecked += c; totalCells += DAYS_IN_CYCLE;
+      if(catTotal[a.cat] === undefined){ catTotal[a.cat]=0; catChecked[a.cat]=0; }
+      catChecked[a.cat] += c; catTotal[a.cat] += DAYS_IN_CYCLE;
+    });
+    var result = { overallPct: totalCells ? Math.round((totalChecked/totalCells)*100) : 0, catChecked:catChecked, catTotal:catTotal };
+    _statsCache[key] = result;
+    return result;
   }
 
-  function cycleLabel(cycle){
-    return U.fmtWeekdayDate(cycle.startDate) + " - " + U.fmtWeekdayDate(U.addDays(cycle.startDate, DAYS_IN_CYCLE - 1));
+  function invalidateStatsCache(){ _statsCache = {}; }
+
+  // ---- Multiple cycles ----
+  function getActiveCycles(){
+    return App.Storage.getCycles() || [];
   }
 
-  function archivedLabel(entry){
-    var archivedKey = (entry.archivedAt || "").slice(0, 10);
-    return /^\d{4}-\d{2}-\d{2}$/.test(archivedKey) ? U.fmtWeekdayDate(archivedKey) : "unknown date";
+  function addCycle(cycle){
+    App.Storage.addCycle(sanitizeCycle(cycle));
+    invalidateStatsCache();
   }
 
-  function cycleScore(cycle){
-    return computeCycleStats(cycle).overallPct;
+  function removeCycle(index){
+    App.Storage.removeCycle(index);
+    invalidateStatsCache();
   }
 
-  function getHistoryEntry(id){
-    var history = App.Storage.state.history || [];
-    return history.find(function(entry){ return entry.id === id; }) || null;
+  // ---- Viewing cycle ----
+  function getViewingCycle(){
+    if(currentCycleView !== "current"){
+      var cycles = getActiveCycles();
+      var idx = parseInt(currentCycleView, 10);
+      if(!isNaN(idx) && cycles[idx]) return cycles[idx];
+      currentCycleView = "current";
+    }
+    return App.Storage.state.cycle;
   }
 
   function isViewingHistory(){
     return currentCycleView !== "current";
   }
 
-  function getViewingCycle(){
-    if(isViewingHistory()){
-      var entry = getHistoryEntry(currentCycleView);
-      if(entry) return entry.cycle;
-      currentCycleView = "current";
-    }
-    return App.Storage.state.cycle;
-  }
+  // ---- Helpers ----
+  function cloneCycle(cycle){ return sanitizeCycle(JSON.parse(JSON.stringify(cycle))); }
+  function cycleLabel(cycle){ return U.fmtWeekdayDate(cycle.startDate) + " - " + U.fmtWeekdayDate(U.addDays(cycle.startDate, DAYS_IN_CYCLE - 1)); }
+  function archivedLabel(entry){ var archivedKey = (entry.archivedAt || "").slice(0,10); return /^\d{4}-\d{2}-\d{2}$/.test(archivedKey) ? U.fmtWeekdayDate(archivedKey) : "unknown date"; }
+  function cycleScore(cycle){ return computeCycleStats(cycle).overallPct; }
+  function getHistoryEntry(id){ var history = App.Storage.state.history || []; return history.find(function(entry){ return entry.id === id; }) || null; }
 
   function groupedActivities(cycle){
     cycle = cycle || getViewingCycle();
@@ -154,53 +162,16 @@ App.Challenge = (function(){
     });
   }
 
-  function dayIndexForCycleDate(cycle, key){
-    return Math.round((U.keyToDate(key) - U.keyToDate(cycle.startDate)) / 86400000) + 1;
-  }
-
-  function visibleDayIndexes(cycle){
-    if(!cycleCompactMode){
-      return Array.from({ length: DAYS_IN_CYCLE }, function(_, i){ return i; });
-    }
-    var idx = dayIndexForCycleDate(cycle, App.curKey) - 1;
-    if(idx < 0 || idx >= DAYS_IN_CYCLE) idx = U.clamp(dayIndexForCycleDate(cycle, U.todayKey()) - 1, 0, DAYS_IN_CYCLE - 1);
-    return [idx];
-  }
-
-  function makeCycleFromTemplate(template){
-    var acts = template.activities.map(function(a){ return { id:U.uid(), name:a.name, cat:a.cat }; });
-    var checks = {};
-    acts.forEach(function(a){ checks[a.id] = new Array(DAYS_IN_CYCLE).fill(false); });
-    return { startDate: U.todayKey(), activities: acts, checks: checks };
-  }
-
   function dayIndexForDate(key){
     var state = App.Storage.state;
     var start = U.keyToDate(state.cycle.startDate);
     var d = U.keyToDate(key);
-    return Math.round((d - start) / 86400000) + 1; // 1-based; may fall outside 1..DAYS_IN_CYCLE
+    return Math.round((d - start) / 86400000) + 1;
   }
 
-  function challengeDayIndex(){
-    return dayIndexForDate(App.curKey) - 1;
-  }
+  function challengeDayIndex(){ return dayIndexForDate(App.curKey) - 1; }
 
-  function computeCycleStats(cycle){
-    cycle = cycle || App.Storage.state.cycle;
-    var totalChecked = 0, totalCells = 0;
-    var catChecked = {}, catTotal = {};
-    CAT_ORDER.forEach(function(c){ catChecked[c]=0; catTotal[c]=0; });
-    cycle.activities.forEach(function(a){
-      var arr = cycle.checks[a.id] || [];
-      var c = arr.filter(Boolean).length;
-      totalChecked += c; totalCells += DAYS_IN_CYCLE;
-      if(catTotal[a.cat] === undefined){ catTotal[a.cat]=0; catChecked[a.cat]=0; }
-      catChecked[a.cat] += c; catTotal[a.cat] += DAYS_IN_CYCLE;
-    });
-    return { overallPct: totalCells ? Math.round((totalChecked/totalCells)*100) : 0, catChecked:catChecked, catTotal:catTotal };
-  }
-
-  /* ---------- dom ---------- */
+  // ---- DOM refs ----
   var dom = {};
   function cacheDom(){
     dom.cycleStartInput = document.getElementById("cycleStartInput");
@@ -228,24 +199,21 @@ App.Challenge = (function(){
     dom.addActBtn = document.getElementById("addActBtn");
     dom.challengeChecklist = document.getElementById("challengeChecklist");
     dom.challengeDayNote = document.getElementById("challengeDayNote");
-
-    var footTd = dom.cycleTable.querySelector("tfoot td");
-    if(footTd) footTd.colSpan = 3 + DAYS_IN_CYCLE + 1;
+    dom.quickStartCycle = document.getElementById("quickStartCycle"); // from header
   }
 
+  // ---- Render functions (mostly unchanged from original, but we include them all) ----
   function populateCategorySelect(){
     CAT_ORDER.forEach(function(key){
       var opt = document.createElement("option");
       opt.value = key; opt.textContent = CATEGORIES[key].label;
       dom.newActCat.appendChild(opt);
-
       var filterOpt = document.createElement("option");
       filterOpt.value = key; filterOpt.textContent = CATEGORIES[key].label;
       dom.cycleCategoryFilter.appendChild(filterOpt);
     });
   }
 
-  /* ---------- render: 21-Day dashboard + table ---------- */
   function renderHistoryControls(){
     var history = App.Storage.state.history || [];
     var templates = App.Storage.state.cycleTemplates || [];
@@ -335,7 +303,9 @@ App.Challenge = (function(){
   function buildCycleHeader(){
     Array.from(dom.cycleHeadRow.querySelectorAll("th.col-day")).forEach(function(th){ th.remove(); });
     var scoreTh = dom.cycleHeadRow.querySelector(".col-score");
-    visibleDayIndexes(getViewingCycle()).forEach(function(dayIdx){
+    var cycle = getViewingCycle();
+    var dayIndexes = cycleCompactMode ? [U.clamp(dayIndexForDate(App.curKey)-1, 0, DAYS_IN_CYCLE-1)] : Array.from({length:DAYS_IN_CYCLE}, function(_,i){ return i; });
+    dayIndexes.forEach(function(dayIdx){
       var th = document.createElement("th");
       th.className = "col-day";
       th.scope = "col";
@@ -360,12 +330,13 @@ App.Challenge = (function(){
     dom.cycleBody.innerHTML = "";
     var ordered = filteredActivities(cycle);
     var viewingHistory = isViewingHistory();
-    var dayIndexes = visibleDayIndexes(cycle);
+    var dayIndexes = cycleCompactMode ? [U.clamp(dayIndexForDate(App.curKey)-1, 0, DAYS_IN_CYCLE-1)] : Array.from({length:DAYS_IN_CYCLE}, function(_,i){ return i; });
 
     ordered.forEach(function(a, idx){
       var cat = CATEGORIES[a.cat] || CATEGORIES.mind;
       var tr = document.createElement("tr");
       tr.dataset.activityId = a.id;
+      tr.draggable = !viewingHistory;
 
       var tdSn = document.createElement("td");
       tdSn.className = "col-sn";
@@ -380,7 +351,6 @@ App.Challenge = (function(){
       nameSpan.className = "act-name";
       nameSpan.contentEditable = viewingHistory ? "false" : "true";
       nameSpan.spellcheck = false;
-      nameSpan.setAttribute("aria-label", viewingHistory ? "Activity name" : "Activity name, editable");
       nameSpan.textContent = a.name;
       nameSpan.addEventListener("keydown", function(e){ if(e.key === "Enter"){ e.preventDefault(); nameSpan.blur(); } });
       var delBtn = document.createElement("button");
@@ -488,7 +458,6 @@ App.Challenge = (function(){
     dom.challengeDayNote.value = cycleNotes[dayIdx] || "";
   }
 
-  /* ---------- render: Today's 21-day challenge checklist (Daily view) ---------- */
   function renderChallengeChecklist(){
     var state = App.Storage.state;
     var dayIdx = challengeDayIndex();
@@ -546,7 +515,7 @@ App.Challenge = (function(){
     renderChallengeDayNote();
   }
 
-  /* ---------- data tools ---------- */
+  // ---- Data tools ----
   function exportCsv(){
     var cycle = getViewingCycle();
     var header = ["Activity","Category"];
@@ -577,7 +546,7 @@ App.Challenge = (function(){
     App.Storage.save();
     rebuildCycleTable();
     renderCycleDash();
-    if(!silent) U.showToast("Current cycle archived");
+    if(!silent) U.showToast("Current cycle archived", 2000, "success");
   }
 
   function startFreshCycle(confirmText, archiveCurrent){
@@ -588,6 +557,7 @@ App.Challenge = (function(){
     state.cycle.startDate = U.todayKey();
     currentCycleView = "current";
     App.Storage.save();
+    invalidateStatsCache();
     rebuildCycleTable();
     renderCycleDash();
     updateCycleHighlight();
@@ -606,84 +576,30 @@ App.Challenge = (function(){
     return startFreshCycle("Start a new 21-day cycle from today? Your current 21-day checklist will be archived for preview, then the active cycle starts fresh from today. Your daily logs stay saved.", true);
   }
 
-  function renameHistoryCycle(){
-    var entry = getHistoryEntry(currentCycleView);
-    if(!entry) return;
-    var next = prompt("Rename archived cycle", entry.label || cycleLabel(entry.cycle));
-    if(next === null) return;
-    next = next.trim();
-    if(!next) return;
-    entry.label = next;
-    App.Storage.save();
-    renderCycleDash();
+  // ---- Quick start from header ----
+  function quickStartNextCycle(){
+    if(!confirm("Start a new 21-day cycle from today? Your current cycle will be archived for preview.")) return;
+    startNextCycle();
   }
 
-  function deleteHistoryCycle(){
-    var entry = getHistoryEntry(currentCycleView);
-    if(!entry) return;
-    if(!confirm('Delete archived cycle "'+(entry.label || cycleLabel(entry.cycle))+'"? This does not affect your current cycle.')) return;
-    App.Storage.state.history = (App.Storage.state.history || []).filter(function(x){ return x.id !== entry.id; });
-    currentCycleView = "current";
+  // ---- Reorder activities ----
+  function reorderActivities(fromIndex, toIndex){
+    var cycle = getViewingCycle();
+    if(isViewingHistory()) return;
+    var acts = cycle.activities;
+    if(fromIndex < 0 || fromIndex >= acts.length || toIndex < 0 || toIndex >= acts.length) return;
+    var moved = acts.splice(fromIndex, 1)[0];
+    acts.splice(toIndex, 0, moved);
     App.Storage.save();
+    invalidateStatsCache();
     rebuildCycleTable();
     renderCycleDash();
+    U.showToast("Activities reordered", 1500, "success");
   }
 
-  function restoreHistoryCycle(){
-    var entry = getHistoryEntry(currentCycleView);
-    if(!entry) return;
-    if(!confirm("Restore this archived cycle as the active current cycle? Your current active cycle will be archived first.")) return;
-    archiveCurrentCycle(true);
-    App.Storage.state.cycle = cloneCycle(entry.cycle);
-    currentCycleView = "current";
-    App.Storage.save();
-    rebuildCycleTable();
-    renderCycleDash();
-    renderChallengeChecklist();
-    App.renderHeader();
-    App.renderDayNav();
-    U.showToast("Archived cycle restored");
-  }
-
-  function saveCurrentTemplate(){
-    var name = prompt("Template name", "Challenge template " + U.todayKey());
-    if(name === null) return;
-    name = name.trim();
-    if(!name) return;
-    var state = App.Storage.state;
-    if(!Array.isArray(state.cycleTemplates)) state.cycleTemplates = [];
-    state.cycleTemplates.unshift({
-      id: U.uid(),
-      name: name,
-      createdAt: new Date().toISOString(),
-      activities: state.cycle.activities.map(function(a){ return { name:a.name, cat:a.cat }; })
-    });
-    App.Storage.save();
-    renderCycleDash();
-    U.showToast("Template saved");
-  }
-
-  function startFromTemplate(){
-    var id = dom.cycleTemplateSelect.value;
-    var template = (App.Storage.state.cycleTemplates || []).find(function(t){ return t.id === id; });
-    if(!template) return;
-    if(!confirm('Start a new current cycle from "'+template.name+'"? Your current cycle will be archived first.')) return;
-    archiveCurrentCycle(true);
-    App.Storage.state.cycle = makeCycleFromTemplate(template);
-    currentCycleView = "current";
-    App.Storage.save();
-    App.setCurKey(U.todayKey());
-    rebuildCycleTable();
-    renderCycleDash();
-    renderChallengeChecklist();
-    App.renderHeader();
-    App.renderDayNav();
-    U.showToast("Template cycle started");
-  }
-
-  /* ---------- events ---------- */
+  // ---- Events ----
   function wireEvents(){
-    // -- the 21-day grid: toggle a check, rename/delete an activity, add one --
+    // Toggle checks, delete activity, edit name (same as original)
     dom.cycleBody.addEventListener("click", function(e){
       var chk = e.target.closest(".chk");
       if(chk){
@@ -703,9 +619,9 @@ App.Challenge = (function(){
         else { chk.style.background = ""; chk.style.borderColor = ""; }
         updateScoreCell(tr, id);
         App.Storage.save();
+        invalidateStatsCache();
         renderCycleDash();
         App.renderHeader();
-        // Keep the daily checklist in sync if this check belongs to the day being viewed.
         if(day === challengeDayIndex()) renderChallengeChecklist();
         return;
       }
@@ -720,6 +636,7 @@ App.Challenge = (function(){
           state2.cycle.activities = state2.cycle.activities.filter(function(x){ return x.id !== id2; });
           delete state2.cycle.checks[id2];
           App.Storage.save();
+          invalidateStatsCache();
           renderCycleBody();
           renderCycleDash();
           App.renderHeader();
@@ -743,6 +660,7 @@ App.Challenge = (function(){
       var delBtn = tr.querySelector(".del-btn");
       if(delBtn) delBtn.setAttribute("aria-label", "Delete "+a.name);
       App.Storage.save();
+      invalidateStatsCache();
       renderChallengeChecklist();
     });
 
@@ -751,6 +669,7 @@ App.Challenge = (function(){
       if(!dom.cycleStartInput.value) return;
       App.Storage.state.cycle.startDate = dom.cycleStartInput.value;
       App.Storage.save();
+      invalidateStatsCache();
       rebuildCycleTable();
       renderCycleDash();
       App.renderDayNav();
@@ -770,6 +689,7 @@ App.Challenge = (function(){
       state.cycle.checks[id] = new Array(DAYS_IN_CYCLE).fill(false);
       dom.newActName.value = "";
       App.Storage.save();
+      invalidateStatsCache();
       renderCycleBody();
       renderCycleDash();
       App.renderHeader();
@@ -777,12 +697,11 @@ App.Challenge = (function(){
     });
     dom.newActName.addEventListener("keydown", function(e){ if(e.key === "Enter") dom.addActBtn.click(); });
 
-    // -- clicking a day column header jumps the Daily view to that date --
     dom.cycleHeadRow.addEventListener("click", function(e){
       var th = e.target.closest("th.col-day");
       if(!th) return;
       if(isViewingHistory()){
-        U.showToast("Archived cycle previews are read-only");
+        U.showToast("Archived cycle previews are read-only", 2000, "warning");
         return;
       }
       var idx = Number(th.dataset.dayIdx);
@@ -794,6 +713,7 @@ App.Challenge = (function(){
 
     dom.cycleHistorySelect.addEventListener("change", function(){
       currentCycleView = dom.cycleHistorySelect.value || "current";
+      invalidateStatsCache();
       rebuildCycleTable();
       renderCycleDash();
       updateCycleHighlight();
@@ -805,9 +725,44 @@ App.Challenge = (function(){
         archiveCurrentCycle(false);
       }
     });
-    dom.renameCycleBtn.addEventListener("click", renameHistoryCycle);
-    dom.restoreCycleBtn.addEventListener("click", restoreHistoryCycle);
-    dom.deleteCycleBtn.addEventListener("click", deleteHistoryCycle);
+    dom.renameCycleBtn.addEventListener("click", function(){
+      var entry = getHistoryEntry(currentCycleView);
+      if(!entry) return;
+      var next = prompt("Rename archived cycle", entry.label || cycleLabel(entry.cycle));
+      if(next === null) return;
+      next = next.trim();
+      if(!next) return;
+      entry.label = next;
+      App.Storage.save();
+      renderCycleDash();
+    });
+    dom.restoreCycleBtn.addEventListener("click", function(){
+      var entry = getHistoryEntry(currentCycleView);
+      if(!entry) return;
+      if(!confirm("Restore this archived cycle as the active current cycle? Your current active cycle will be archived first.")) return;
+      archiveCurrentCycle(true);
+      App.Storage.state.cycle = cloneCycle(entry.cycle);
+      currentCycleView = "current";
+      App.Storage.save();
+      invalidateStatsCache();
+      rebuildCycleTable();
+      renderCycleDash();
+      renderChallengeChecklist();
+      App.renderHeader();
+      App.renderDayNav();
+      U.showToast("Archived cycle restored", 2000, "success");
+    });
+    dom.deleteCycleBtn.addEventListener("click", function(){
+      var entry = getHistoryEntry(currentCycleView);
+      if(!entry) return;
+      if(!confirm('Delete archived cycle "'+(entry.label || cycleLabel(entry.cycle))+'"? This does not affect your current cycle.')) return;
+      App.Storage.state.history = (App.Storage.state.history || []).filter(function(x){ return x.id !== entry.id; });
+      currentCycleView = "current";
+      App.Storage.save();
+      invalidateStatsCache();
+      rebuildCycleTable();
+      renderCycleDash();
+    });
 
     dom.cycleCategoryFilter.addEventListener("change", function(){
       cycleCategoryFilter = dom.cycleCategoryFilter.value || "all";
@@ -826,12 +781,46 @@ App.Challenge = (function(){
     dom.cycleTemplateSelect.addEventListener("change", function(){
       dom.startTemplateBtn.disabled = !dom.cycleTemplateSelect.value;
     });
-    dom.saveTemplateBtn.addEventListener("click", saveCurrentTemplate);
-    dom.startTemplateBtn.addEventListener("click", startFromTemplate);
+    dom.saveTemplateBtn.addEventListener("click", function(){
+      var name = prompt("Template name", "Challenge template " + U.todayKey());
+      if(name === null) return;
+      name = name.trim();
+      if(!name) return;
+      var state = App.Storage.state;
+      if(!Array.isArray(state.cycleTemplates)) state.cycleTemplates = [];
+      state.cycleTemplates.unshift({
+        id: U.uid(),
+        name: name,
+        createdAt: new Date().toISOString(),
+        activities: state.cycle.activities.map(function(a){ return { name:a.name, cat:a.cat }; })
+      });
+      App.Storage.save();
+      renderCycleDash();
+      U.showToast("Template saved", 2000, "success");
+    });
+    dom.startTemplateBtn.addEventListener("click", function(){
+      var id = dom.cycleTemplateSelect.value;
+      var template = (App.Storage.state.cycleTemplates || []).find(function(t){ return t.id === id; });
+      if(!template) return;
+      if(!confirm('Start a new current cycle from "'+template.name+'"? Your current cycle will be archived first.')) return;
+      archiveCurrentCycle(true);
+      var acts = template.activities.map(function(a){ return { id:U.uid(), name:a.name, cat:a.cat }; });
+      var checks = {};
+      acts.forEach(function(a){ checks[a.id] = new Array(DAYS_IN_CYCLE).fill(false); });
+      App.Storage.state.cycle = { startDate: U.todayKey(), activities: acts, checks: checks };
+      currentCycleView = "current";
+      App.Storage.save();
+      invalidateStatsCache();
+      App.setCurKey(U.todayKey());
+      rebuildCycleTable();
+      renderCycleDash();
+      renderChallengeChecklist();
+      App.renderHeader();
+      App.renderDayNav();
+      U.showToast("Template cycle started", 2000, "success");
+    });
 
-    // -- Today's 21-day challenge checklist (Daily view, grouped by Habit Category) --
-    // This is the piece that lets users mark challenge tasks complete directly from
-    // the checklist and keeps that completion synced with the 21-day grid above.
+    // Challenge checklist events
     dom.challengeChecklist.addEventListener("change", function(e){
       var input = e.target;
       if(!input.matches || !input.matches("[data-challenge-id]")) return;
@@ -842,13 +831,14 @@ App.Challenge = (function(){
       if(!arr) return;
       arr[day] = !arr[day];
       App.Storage.save();
+      invalidateStatsCache();
       renderChallengeChecklist();
       renderCycleDash();
       App.renderHeader();
       updateCycleHighlight();
     });
 
-    dom.challengeDayNote.addEventListener("input", function(){
+    dom.challengeDayNote.addEventListener("input", U.debounce(function(){
       var dayIdx = challengeDayIndex();
       if(dayIdx < 0 || dayIdx >= DAYS_IN_CYCLE) return;
       var state = App.Storage.state;
@@ -857,7 +847,7 @@ App.Challenge = (function(){
       if(!state.challengeNotes[cycleKey]) state.challengeNotes[cycleKey] = {};
       state.challengeNotes[cycleKey][dayIdx] = dom.challengeDayNote.value;
       App.Storage.save();
-    });
+    }, 500));
 
     dom.challengeChecklist.addEventListener("click", function(e){
       var btn = e.target.closest("[data-start-next-cycle]");
@@ -866,8 +856,39 @@ App.Challenge = (function(){
         App.setCurKey(U.todayKey());
         App.renderDayNav();
         App.renderHeader();
-        U.showToast("Next 21-day cycle started");
+        U.showToast("Next 21-day cycle started", 2000, "success");
       }
+    });
+
+    // Quick start from header
+    if(dom.quickStartCycle){
+      dom.quickStartCycle.addEventListener("click", quickStartNextCycle);
+    }
+
+    // Reorder via drag & drop
+    var tbody = dom.cycleBody;
+    var dragSrcIndex = null;
+    tbody.addEventListener("dragstart", function(e){
+      var row = e.target.closest("tr");
+      if(!row || isViewingHistory()) return;
+      dragSrcIndex = Array.from(tbody.children).indexOf(row);
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", row.dataset.activityId);
+    });
+    tbody.addEventListener("dragover", function(e){
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+    });
+    tbody.addEventListener("drop", function(e){
+      e.preventDefault();
+      if(isViewingHistory()) return;
+      var targetRow = e.target.closest("tr");
+      if(!targetRow) return;
+      var targetIndex = Array.from(tbody.children).indexOf(targetRow);
+      if(dragSrcIndex !== null && dragSrcIndex !== targetIndex){
+        reorderActivities(dragSrcIndex, targetIndex);
+      }
+      dragSrcIndex = null;
     });
   }
 
@@ -878,14 +899,29 @@ App.Challenge = (function(){
   }
 
   return {
-    DAYS_IN_CYCLE: DAYS_IN_CYCLE, CATEGORIES: CATEGORIES, CAT_ORDER: CAT_ORDER,
-    defaultCycle: defaultCycle, sanitizeCycle: sanitizeCycle,
-    groupedActivities: groupedActivities, dayIndexForDate: dayIndexForDate,
-    challengeDayIndex: challengeDayIndex, computeCycleStats: computeCycleStats,
+    DAYS_IN_CYCLE: DAYS_IN_CYCLE,
+    CATEGORIES: CATEGORIES,
+    CAT_ORDER: CAT_ORDER,
+    defaultCycle: defaultCycle,
+    sanitizeCycle: sanitizeCycle,
+    groupedActivities: groupedActivities,
+    dayIndexForDate: dayIndexForDate,
+    challengeDayIndex: challengeDayIndex,
+    computeCycleStats: computeCycleStats,
     init: init,
-    rebuildCycleTable: rebuildCycleTable, renderCycleBody: renderCycleBody,
-    renderCycleDash: renderCycleDash, updateCycleHighlight: updateCycleHighlight,
-    scrollToViewingColumn: scrollToViewingColumn, renderChallengeChecklist: renderChallengeChecklist,
-    exportCsv: exportCsv, resetCycle: resetCycle, startNextCycle: startNextCycle
+    rebuildCycleTable: rebuildCycleTable,
+    renderCycleDash: renderCycleDash,
+    updateCycleHighlight: updateCycleHighlight,
+    scrollToViewingColumn: scrollToViewingColumn,
+    renderChallengeChecklist: renderChallengeChecklist,
+    exportCsv: exportCsv,
+    resetCycle: resetCycle,
+    startNextCycle: startNextCycle,
+    quickStartNextCycle: quickStartNextCycle,
+    getViewingCycle: getViewingCycle,
+    isViewingHistory: isViewingHistory,
+    reorderActivities: reorderActivities,
+    invalidateStatsCache: invalidateStatsCache
   };
 })();
+

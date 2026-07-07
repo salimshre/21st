@@ -21,6 +21,16 @@
 </head>
 <body>
 
+<div id="tourOverlay" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:9999;">
+  <div class="tour-tooltip" style="position:absolute; background:var(--card-bg); padding:16px; border-radius:8px; max-width:300px; box-shadow:0 4px 20px rgba(0,0,0,0.3);">
+    <p id="tourText"></p>
+    <div style="display:flex; gap:8px; margin-top:10px;">
+      <button class="tour-next" style="background:var(--primary); border:none; color:#fff; padding:4px 12px; border-radius:4px; cursor:pointer;">Next</button>
+      <button class="tour-skip" style="background:transparent; border:1px solid var(--border); padding:4px 12px; border-radius:4px; cursor:pointer;">Skip</button>
+    </div>
+  </div>
+</div>
+
 <?php include __DIR__ . '/components/header.php'; ?>
 <?php include __DIR__ . '/components/navigation.php'; ?>
 
@@ -42,5 +52,4 @@
 <script src="assets/js/todos.js"></script>
 <script src="assets/js/app.js"></script>
 </body>
-
 </html>

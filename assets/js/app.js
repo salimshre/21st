@@ -1,5 +1,6 @@
 /* ============================================================
-   app.js – Main entry point with todos enhancements
+   app.js – Main entry with keyboard shortcuts, focus mode,
+   tutorial, and notification reminders.
    ============================================================ */
 
 (function(){
@@ -7,45 +8,43 @@
   var U = App.Util;
 
   var activeMainTab = "daily";
-
-  /* ---------- dom ---------- */
   var dom = {};
+
   function cacheDom(){
     dom.hdrCycle = document.getElementById("hdrCycle");
     dom.hdrStreak = document.getElementById("hdrStreak");
     dom.hdrToday = document.getElementById("hdrToday");
     dom.hdrBackup = document.getElementById("hdrBackup");
-    dom.hdrTodos = document.getElementById("hdrTodos"); // new
+    dom.hdrTodos = document.getElementById("hdrTodos");
     dom.hstatCycle = document.getElementById("hstatCycle");
     dom.hstatStreak = document.getElementById("hstatStreak");
     dom.hstatToday = document.getElementById("hstatToday");
     dom.headerBackupBtn = document.getElementById("headerBackupBtn");
-
     dom.mainTabs = Array.from(document.querySelectorAll(".maintab"));
     dom.panels = Array.from(document.querySelectorAll(".view-panel"));
-
     dom.daynav = document.getElementById("daynav");
     dom.navPrev = document.getElementById("navPrev");
     dom.navNext = document.getElementById("navNext");
     dom.navToday = document.getElementById("navToday");
     dom.navTitle = document.getElementById("navTitle");
     dom.navSub = document.getElementById("navSub");
-
     dom.dailySubtabs = Array.from(document.querySelectorAll(".subtab"));
     dom.subPanels = Array.from(document.querySelectorAll(".subpanel"));
-
     dom.exportCsvBtn = document.getElementById("exportCsvBtn");
     dom.exportDailyCsvBtn = document.getElementById("exportDailyCsvBtn");
     dom.backupBtn = document.getElementById("backupBtn");
     dom.restoreBtn = document.getElementById("restoreBtn");
     dom.restoreInput = document.getElementById("restoreInput");
     dom.resetCycleBtn = document.getElementById("resetCycleBtn");
-
-    // Stat card for todos (quick add)
     dom.statTodos = document.getElementById("statTodos");
+    dom.focusToggle = document.getElementById("focusToggle");
+    dom.helpBtn = document.getElementById("helpBtn");
+    dom.tourOverlay = document.getElementById("tourOverlay");
+    dom.quickStartCycle = document.getElementById("quickStartCycle");
+    dom.exportMarkdownBtn = document.getElementById("exportMarkdownBtn");
   }
 
-  /* ---------- render: header + day navigator ---------- */
+  // ---- Render header ----
   function renderHeader(){
     var cycle = App.Challenge.computeCycleStats();
     var streak = App.Analytics.computeStreak();
@@ -62,7 +61,6 @@
     dom.hstatStreak.classList.toggle("lit", streak >= 3);
     dom.headerBackupBtn.classList.toggle("warn", backupAge === Infinity || backupAge > 7);
 
-    // Update todos summary
     var d = App.Storage.getDay(App.curKey);
     var todos = d.todos || [];
     var done = todos.filter(function(t){ return t.done; }).length;
@@ -89,14 +87,13 @@
     dom.navNext.disabled = isToday;
   }
 
-  /* ---------- render: daily panel (cross-module) ---------- */
   function renderDailyPanel(){
     App.Habits.renderDailyPanel();
     App.Challenge.renderChallengeChecklist();
     if (typeof App.Todos !== 'undefined' && App.Todos.renderTodos) {
       App.Todos.renderTodos();
     }
-    renderHeader(); // keep header in sync
+    renderHeader();
   }
 
   function renderEverything(){
@@ -108,7 +105,7 @@
     if(activeMainTab === "analytics") App.Analytics.renderAnalytics();
   }
 
-  /* ---------- tabs + day navigation ---------- */
+  // ---- Tabs ----
   function switchMainTab(tab){
     activeMainTab = tab;
     dom.mainTabs.forEach(function(b){ b.classList.toggle("active", b.dataset.tab === tab); });
@@ -124,7 +121,6 @@
   function switchSubTab(name){
     dom.dailySubtabs.forEach(function(b){ b.classList.toggle("active", b.dataset.subtab === name); });
     dom.subPanels.forEach(function(p){ p.classList.toggle("active", p.id === "sub-" + name); });
-    // If switching to todos, ensure render
     if (name === 'todos' && typeof App.Todos !== 'undefined') {
       App.Todos.renderTodos();
     }
@@ -140,11 +136,11 @@
 
   function changeDay(delta){
     var nd = U.addDays(App.curKey, delta);
-    if(U.keyToDate(nd) > U.todayDate()) return; // never navigate into the future
+    if(U.keyToDate(nd) > U.todayDate()) return;
     setCurKey(nd);
   }
 
-  /* ---------- footer: data tools ---------- */
+  // ---- Backup/restore ----
   function backupJson(prefix){
     var name = (prefix || "tracker-backup") + "-" + U.todayKey() + ".json";
     U.downloadBlob(JSON.stringify(App.Storage.state, null, 2), "application/json", name);
@@ -162,19 +158,24 @@
         alert("That file isn't valid JSON — make sure it's a backup exported from this tracker.");
         dom.restoreInput.value = ""; return;
       }
+      // Show preview
+      var summary = "Backup summary:\n";
+      if(parsed.days) summary += "• " + Object.keys(parsed.days).length + " daily logs\n";
+      if(parsed.cycle) summary += "• 21-day cycle: " + parsed.cycle.activities.length + " activities\n";
+      if(parsed.history) summary += "• " + parsed.history.length + " archived cycles\n";
+      if(!confirm("This will replace your entire dataset.\n\n" + summary + "\nContinue?")) return;
+
       if(App.Storage.isValidUnified(parsed)){
-        if(confirm("Load this backup? It will replace your entire dataset — the 21-day grid and every daily log.")){
-          backupJson("pre-restore-backup");
-          App.Storage.replaceState(parsed);
-          renderEverything();
-          U.showToast("Safety backup downloaded, then backup restored ✓", 3500);
-        }
+        backupJson("pre-restore-backup");
+        App.Storage.replaceState(parsed);
+        renderEverything();
+        U.showToast("Safety backup downloaded, then backup restored ✓", 3500, "success");
       } else if(App.Storage.isLegacyCycleBackup(parsed)){
         if(confirm("This looks like an older 21-day-only backup. Load it into the 21-day grid? Your daily logs stay as they are.")){
           backupJson("pre-restore-backup");
           App.Storage.replaceCycle({ startDate: parsed.startDate, activities: parsed.activities, checks: parsed.checks });
           renderEverything();
-          U.showToast("Safety backup downloaded, then 21-day grid restored ✓", 3500);
+          U.showToast("Safety backup downloaded, then 21-day grid restored ✓", 3500, "success");
         }
       } else {
         alert("That JSON doesn't look like a backup from this tracker.");
@@ -184,7 +185,112 @@
     reader.readAsText(file);
   }
 
-  /* ---------- events ---------- */
+  // ---- Export Markdown ----
+  function exportMarkdown(){
+    var today = U.todayKey();
+    var d = App.Storage.getDay(today);
+    var habits = App.Storage.getHabits();
+    var routine = App.Storage.getRoutineBlocks();
+    var md = "# Daily Log: " + today + "\n\n";
+    md += "## Habits\n";
+    habits.forEach(function(h){ md += "- [ " + (d.h[h.id] ? "x" : " ") + " ] " + h.label + "\n"; });
+    md += "\n## Routine\n";
+    routine.forEach(function(b){ md += "- [ " + (d.rb[b.id] ? "x" : " ") + " ] " + b.name + " (" + b.time + ")\n"; });
+    md += "\n## Rating: " + d.rating + "/10\n";
+    md += "\n## Journal\n" + (d.journal || "—") + "\n";
+    md += "\n## Priority\n" + (d.priority || "—") + "\n";
+    U.downloadBlob(md, "text/markdown;charset=utf-8;", "daily-log-"+today+".md");
+    U.showToast("Markdown exported", 1500, "success");
+  }
+
+  // ---- Keyboard shortcuts ----
+  function handleKeys(e){
+    if(e.ctrlKey && e.key === "s"){
+      e.preventDefault();
+      var saveBtn = document.getElementById("saveDayBtn");
+      if(saveBtn) saveBtn.click();
+    }
+    if(e.key === "ArrowLeft" && !e.target.closest("input,textarea,select")){
+      e.preventDefault();
+      changeDay(-1);
+    }
+    if(e.key === "ArrowRight" && !e.target.closest("input,textarea,select")){
+      e.preventDefault();
+      changeDay(1);
+    }
+    if(e.key === "?" && !e.target.closest("input,textarea,select")){
+      e.preventDefault();
+      showTour();
+    }
+  }
+
+  // ---- Focus mode ----
+  function toggleFocusMode(){
+    var body = document.body;
+    body.classList.toggle("focus-mode");
+    var state = App.Storage.state;
+    state.meta.focusMode = body.classList.contains("focus-mode");
+    App.Storage.save();
+  }
+
+  // ---- Tutorial ----
+  function showTour(){
+    var overlay = dom.tourOverlay;
+    if(!overlay) return;
+    overlay.style.display = "block";
+    var steps = [
+      { target: "#hstatCycle", text: "This shows your 21-day progress." },
+      { target: "#hstatStreak", text: "Your current streak of quality days." },
+      { target: "#hstatToday", text: "Jump back to today." },
+      { target: "#hdrBackup", text: "Backup your data regularly." },
+      { target: "#saveDayBtn", text: "Don't forget to save each day!" }
+    ];
+    var index = 0;
+    function showStep(i){
+      if(i >= steps.length){ overlay.style.display = "none"; return; }
+      var step = steps[i];
+      var el = document.querySelector(step.target);
+      if(el){
+        var rect = el.getBoundingClientRect();
+        var tooltip = overlay.querySelector(".tour-tooltip");
+        tooltip.textContent = step.text;
+        tooltip.style.top = (rect.bottom + 10) + "px";
+        tooltip.style.left = (rect.left + rect.width/2 - 80) + "px";
+        overlay.querySelector(".tour-next").onclick = function(){ showStep(i+1); };
+        overlay.querySelector(".tour-skip").onclick = function(){ overlay.style.display = "none"; };
+        overlay.style.display = "block";
+      } else {
+        showStep(i+1);
+      }
+    }
+    showStep(0);
+  }
+
+  // ---- Notification reminder ----
+  function requestNotificationPermission(){
+    if("Notification" in window && Notification.permission === "default"){
+      Notification.requestPermission();
+    }
+  }
+  function scheduleReminder(){
+    var now = new Date();
+    var target = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 22, 0, 0);
+    if(now > target) target.setDate(target.getDate() + 1);
+    var ms = target - now;
+    setTimeout(function(){
+      var todayKey = U.todayKey();
+      var d = App.Storage.getDay(todayKey);
+      if(!d.saved && "Notification" in window && Notification.permission === "granted"){
+        new Notification("Routine OS Reminder", {
+          body: "Don't forget to save today's progress!",
+          icon: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎯%3C/text%3E%3C/svg%3E"
+        });
+      }
+      scheduleReminder();
+    }, ms);
+  }
+
+  // ---- Events ----
   function wireEvents(){
     dom.mainTabs.forEach(function(btn){ btn.addEventListener("click", function(){ switchMainTab(btn.dataset.tab); }); });
     dom.dailySubtabs.forEach(function(btn){ btn.addEventListener("click", function(){ switchSubTab(btn.dataset.subtab); }); });
@@ -211,17 +317,39 @@
       handleRestoreFile(file);
     });
 
-    // Quick-add stat card click
     if (dom.statTodos) {
       dom.statTodos.addEventListener('click', function() {
-        // Switch to todos subtab
         var todosBtn = dom.dailySubtabs.find(function(b) { return b.dataset.subtab === 'todos'; });
         if (todosBtn) todosBtn.click();
       });
     }
+
+    // Focus mode
+    if(dom.focusToggle){
+      dom.focusToggle.addEventListener("click", toggleFocusMode);
+      if(App.Storage.state.meta.focusMode){
+        document.body.classList.add("focus-mode");
+      }
+    }
+
+    // Help / Tour
+    if(dom.helpBtn) dom.helpBtn.addEventListener("click", showTour);
+
+    // Quick start cycle
+    if(dom.quickStartCycle){
+      dom.quickStartCycle.addEventListener("click", App.Challenge.quickStartNextCycle);
+    }
+
+    // Export Markdown
+    if(dom.exportMarkdownBtn){
+      dom.exportMarkdownBtn.addEventListener("click", exportMarkdown);
+    }
+
+    // Keyboard shortcuts
+    document.addEventListener("keydown", handleKeys);
   }
 
-  /* ---------- init ---------- */
+  // ---- Init ----
   function init(){
     cacheDom();
 
@@ -244,10 +372,24 @@
     App.Challenge.renderCycleDash();
     renderDailyPanel();
 
-    if(App.Storage.migrated) U.showToast("Imported your existing data ✓", 3500);
+    // Show tour on first visit
+    if(!App.Storage.state.meta.tourCompleted){
+      setTimeout(showTour, 500);
+      App.Storage.state.meta.tourCompleted = true;
+      App.Storage.save();
+    }
+
+    // Notification permission & reminder
+    requestNotificationPermission();
+    scheduleReminder();
+
+    // Auto-backup scheduler
+    App.Storage.scheduleAutoBackup();
+
+    if(App.Storage.migrated) U.showToast("Imported your existing data ✓", 3500, "success");
   }
 
-  // Cross-module API surface
+  // Cross-module API
   App.curKey = null;
   App.renderHeader = renderHeader;
   App.renderDayNav = renderDayNav;
@@ -256,4 +398,3 @@
 
   init();
 })();
-

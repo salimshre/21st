@@ -1,7 +1,6 @@
 /* ============================================================
-   storage.js
-   Loads FIRST. Defines App.Util and App.Storage.
-   Now also manages subjectRotation and routineBlocks.
+   storage.js – Unified data layer with versioning, auto-backup,
+   custom lists, memoisation, and schema v2.
    ============================================================ */
 
 window.App = window.App || {};
@@ -49,19 +48,59 @@ App.Util = (function(){
   }
 
   var toastEl = null, toastTimer = null;
-  function showToast(msg, duration){
+  function showToast(msg, duration, type, undoCallback){
     if(!toastEl) toastEl = document.getElementById("toast");
     if(!toastEl) return;
-    toastEl.textContent = msg;
+    toastEl.className = "toast";
+    if(type) toastEl.classList.add("toast-" + type);
+    toastEl.innerHTML = msg;
+    if(undoCallback){
+      var btn = document.createElement("button");
+      btn.className = "undo-btn";
+      btn.textContent = "Undo";
+      btn.style.marginLeft = "10px";
+      btn.onclick = function(e){
+        e.stopPropagation();
+        undoCallback();
+        hideToast();
+      };
+      toastEl.appendChild(btn);
+    }
     toastEl.classList.add("show");
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function(){ toastEl.classList.remove("show"); }, duration || 2000);
+    if(duration !== 0){
+      toastTimer = setTimeout(hideToast, duration || 3000);
+    }
+  }
+  function hideToast(){
+    if(toastEl) toastEl.classList.remove("show");
+    clearTimeout(toastTimer);
+  }
+
+  function debounce(fn, delay){
+    var timer = null;
+    return function(){
+      var args = arguments, self = this;
+      clearTimeout(timer);
+      timer = setTimeout(function(){ fn.apply(self, args); }, delay);
+    };
+  }
+
+  function memoize(fn){
+    var cache = {};
+    return function(key){
+      if(cache[key] !== undefined) return cache[key];
+      var result = fn.apply(this, arguments);
+      cache[key] = result;
+      return result;
+    };
   }
 
   return {
     pad: pad, todayDate: todayDate, toKey: toKey, keyToDate: keyToDate, todayKey: todayKey,
     addDays: addDays, fmtWeekdayDate: fmtWeekdayDate, clamp: clamp, uid: uid, escapeHtml: escapeHtml,
-    csvEscape: csvEscape, toCsv: toCsv, downloadBlob: downloadBlob, showToast: showToast
+    csvEscape: csvEscape, toCsv: toCsv, downloadBlob: downloadBlob,
+    showToast: showToast, hideToast: hideToast, debounce: debounce, memoize: memoize
   };
 })();
 
@@ -70,71 +109,99 @@ App.Storage = (function(){
   var U = App.Util;
 
   var SCHEMA_VERSION = 2;
-  var STORAGE_KEY = "routineos_unified_v1";
+  var STORAGE_KEY = "routineos_unified_v2";
   var LEGACY_CYCLE_KEY = "challenge21_v2";
   var LEGACY_DAY_PREFIX = "day:";
 
   var state = null;
   var migrated = false;
+  var _memoCache = {};
 
-  // ---- default subject rotation ----
-  function defaultSubjectRotation() {
+  // ---- Default lists ----
+  function defaultHabitList(){
     return [
-      ["Numerical Methods","DSA","Architecture","Economics"],
-      ["DSA","Architecture","Numerical Methods","OOAD"],
-      ["Architecture","Economics","DSA","Numerical Methods"],
-      ["Economics","Numerical Methods","OOAD","Architecture"],
-      ["Numerical Methods","OOAD","Economics","DSA"],
-      ["Light review only","Light review only","Light review only","Light review only"],
-      ["Full revision / past papers","Full revision / past papers","Full revision / past papers","Full revision / past papers"]
+      {id:"alarm", label:"Alarm clock used (no phone)"},
+      {id:"affirm", label:"Affirmation done"},
+      {id:"workout", label:"Workout completed"},
+      {id:"breakfast", label:"Breakfast eaten (no screen)"},
+      {id:"study_blocks", label:"All 4 study blocks done"},
+      {id:"lunch", label:"Lunch before 1:30 PM"},
+      {id:"review", label:"Evening review done"},
+      {id:"device_off", label:"Device off by 22:30"},
+      {id:"presleep", label:"Pre-sleep note reading"},
+      {id:"sleep", label:"Slept by 23:00"}
+    ];
+  }
+  function defaultRoutineBlocks(){
+    return [
+      {id:"wake", time:"06:00 – 06:05", name:"Wake-up", task:"Affirmation, positive thought, today's to-do"},
+      {id:"workout_block", time:"06:05 – 07:30", name:"Workout", task:"Bhutkhel workout according to weekly plan"},
+      {id:"breakfast_block", time:"07:30 – 08:00", name:"Breakfast", task:"Proper breakfast, no screen"},
+      {id:"study_a", time:"08:00 – 10:00", name:"Study A", task:"Step 1 x 4 pomodoros"},
+      {id:"break_1", time:"10:00 – 10:20", name:"Long Break", task:"Walk, water, rest away from desk"},
+      {id:"study_b", time:"10:20 – 12:20", name:"Study B", task:"Step 1 x 4 pomodoros"},
+      {id:"prep", time:"12:20 – 12:30", name:"Prep", task:"Pack steel lunchbox, quick rest"},
+      {id:"lunch_block", time:"12:30 – 13:30", name:"Lunch", task:"Eat lunch, no screen"},
+      {id:"study_c", time:"13:30 – 15:30", name:"Study C", task:"Step 1 x 4 pomodoros"},
+      {id:"break_2", time:"15:30 – 15:50", name:"Long Break", task:"Walk, stretch, hydrate"},
+      {id:"study_d", time:"15:50 – 17:30", name:"Study D", task:"Weak subject or revision, 3 pomodoros"},
+      {id:"free_time", time:"17:30 – 18:00", name:"Free Time", task:"Rest, social, phone, guilt-free"},
+      {id:"dinner", time:"18:00 – 19:00", name:"Dinner", task:"Prep, eat, rest"},
+      {id:"review_block", time:"19:00 – 21:00", name:"Review", task:"Flashcards and today's material only"},
+      {id:"light_work", time:"21:00 – 22:30", name:"Light Work", task:"Blog, project, reading, or creative work"},
+      {id:"wind_down", time:"22:30 – 23:00", name:"Wind-down", task:"Read today's subject notes, one sentence for tomorrow"},
+      {id:"sleep_block", time:"23:00", name:"Sleep", task:"Device off, lights off"}
     ];
   }
 
-  // ---- default routine blocks ----
-  function defaultRoutineBlocks() {
-    return [
-      { id: U.uid(), time: "06:00 – 06:05", name: "Wake-up", task: "Affirmation, positive thought, today's to-do" },
-      { id: U.uid(), time: "06:05 – 07:30", name: "Workout", task: "Bhutkhel workout according to weekly plan" },
-      { id: U.uid(), time: "07:30 – 08:00", name: "Breakfast", task: "Proper breakfast, no screen" },
-      { id: U.uid(), time: "08:00 – 10:00", name: "Study A", task: "Step 1 x 4 pomodoros" },
-      { id: U.uid(), time: "10:00 – 10:20", name: "Long Break", task: "Walk, water, rest away from desk" },
-      { id: U.uid(), time: "10:20 – 12:20", name: "Study B", task: "Step 1 x 4 pomodoros" },
-      { id: U.uid(), time: "12:20 – 12:30", name: "Prep", task: "Pack steel lunchbox, quick rest" },
-      { id: U.uid(), time: "12:30 – 13:30", name: "Lunch", task: "Eat lunch, no screen" },
-      { id: U.uid(), time: "13:30 – 15:30", name: "Study C", task: "Step 1 x 4 pomodoros" },
-      { id: U.uid(), time: "15:30 – 15:50", name: "Long Break", task: "Walk, stretch, hydrate" },
-      { id: U.uid(), time: "15:50 – 17:30", name: "Study D", task: "Weak subject or revision, 3 pomodoros" },
-      { id: U.uid(), time: "17:30 – 18:00", name: "Free Time", task: "Rest, social, phone, guilt-free" },
-      { id: U.uid(), time: "18:00 – 19:00", name: "Dinner", task: "Prep, eat, rest" },
-      { id: U.uid(), time: "19:00 – 21:00", name: "Review", task: "Flashcards and today's material only" },
-      { id: U.uid(), time: "21:00 – 22:30", name: "Light Work", task: "Blog, project, reading, or creative work" },
-      { id: U.uid(), time: "22:30 – 23:00", name: "Wind-down", task: "Read today's subject notes, one sentence for tomorrow" },
-      { id: U.uid(), time: "23:00", name: "Sleep", task: "Device off, lights off" }
-    ];
+  // ---- Sanitizers ----
+  function sanitizeCustomLists(lists){
+    var out = { habits: [], routine: [] };
+    if(lists && typeof lists === "object"){
+      if(Array.isArray(lists.habits)){
+        out.habits = lists.habits.filter(function(h){ return h && typeof h.id === "string" && typeof h.label === "string"; });
+      }
+      if(Array.isArray(lists.routine)){
+        out.routine = lists.routine.filter(function(r){ return r && typeof r.id === "string" && typeof r.name === "string"; });
+      }
+    }
+    if(!out.habits.length) out.habits = defaultHabitList();
+    if(!out.routine.length) out.routine = defaultRoutineBlocks();
+    return out;
   }
 
-  // ---- sanitisation helpers ----
   function sanitizeMeta(meta){
     var m = (meta && typeof meta === "object") ? meta : {};
     return {
       lastBackupAt: typeof m.lastBackupAt === "string" ? m.lastBackupAt : "",
-      lastBackupFile: typeof m.lastBackupFile === "string" ? m.lastBackupFile : ""
+      lastBackupFile: typeof m.lastBackupFile === "string" ? m.lastBackupFile : "",
+      firstVisit: typeof m.firstVisit === "string" ? m.firstVisit : U.todayKey(),
+      tourCompleted: !!m.tourCompleted,
+      focusMode: !!m.focusMode,
+      language: typeof m.language === "string" ? m.language : "en"
     };
   }
 
-  function sanitizeChallengeNotes(notes){
-    var out = {};
-    var src = (notes && typeof notes === "object") ? notes : {};
-    Object.keys(src).forEach(function(cycleKey){
-      if(!/^\d{4}-\d{2}-\d{2}$/.test(cycleKey)) return;
-      var cycleNotes = src[cycleKey];
-      if(!cycleNotes || typeof cycleNotes !== "object") return;
-      out[cycleKey] = {};
-      Object.keys(cycleNotes).forEach(function(day){
-        var idx = Number(day);
-        if(idx >= 0 && idx < App.Challenge.DAYS_IN_CYCLE && typeof cycleNotes[day] === "string"){
-          out[cycleKey][idx] = cycleNotes[day];
-        }
+  function sanitizeCycles(cycles){
+    var out = [];
+    var list = Array.isArray(cycles) ? cycles : [];
+    list.forEach(function(c){
+      out.push(App.Challenge.sanitizeCycle(c));
+    });
+    return out;
+  }
+
+  function sanitizeHistory(history){
+    var out = [];
+    var list = Array.isArray(history) ? history : [];
+    list.forEach(function(entry){
+      if(!entry || typeof entry !== "object") return;
+      var cycle = App.Challenge.sanitizeCycle(entry.cycle);
+      out.push({
+        id: typeof entry.id === "string" ? entry.id : U.uid(),
+        archivedAt: typeof entry.archivedAt === "string" ? entry.archivedAt : new Date().toISOString(),
+        label: typeof entry.label === "string" && entry.label.trim() ? entry.label.trim() : ("Cycle " + (out.length + 1)),
+        cycle: cycle
       });
     });
     return out;
@@ -161,17 +228,19 @@ App.Storage = (function(){
     return out;
   }
 
-  function sanitizeHistory(history){
-    var out = [];
-    var list = Array.isArray(history) ? history : [];
-    list.forEach(function(entry){
-      if(!entry || typeof entry !== "object") return;
-      var cycle = App.Challenge.sanitizeCycle(entry.cycle);
-      out.push({
-        id: typeof entry.id === "string" ? entry.id : U.uid(),
-        archivedAt: typeof entry.archivedAt === "string" ? entry.archivedAt : new Date().toISOString(),
-        label: typeof entry.label === "string" && entry.label.trim() ? entry.label.trim() : ("Cycle " + (out.length + 1)),
-        cycle: cycle
+  function sanitizeChallengeNotes(notes){
+    var out = {};
+    var src = (notes && typeof notes === "object") ? notes : {};
+    Object.keys(src).forEach(function(cycleKey){
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(cycleKey)) return;
+      var cycleNotes = src[cycleKey];
+      if(!cycleNotes || typeof cycleNotes !== "object") return;
+      out[cycleKey] = {};
+      Object.keys(cycleNotes).forEach(function(day){
+        var idx = Number(day);
+        if(idx >= 0 && idx < App.Challenge.DAYS_IN_CYCLE && typeof cycleNotes[day] === "string"){
+          out[cycleKey][idx] = cycleNotes[day];
+        }
       });
     });
     return out;
@@ -186,39 +255,17 @@ App.Storage = (function(){
     return out;
   }
 
-  function sanitizeSubjectRotation(data){
-    var def = defaultSubjectRotation();
-    if (!data || !Array.isArray(data) || data.length !== 7) return def;
-    return data.map(function(day, idx) {
-      if (!Array.isArray(day) || day.length !== 4) return def[idx];
-      return day.map(function(s) { return typeof s === "string" ? s : ""; });
-    });
-  }
-
-  function sanitizeRoutineBlocks(data){
-    var def = defaultRoutineBlocks();
-    if (!Array.isArray(data) || data.length === 0) return def;
-    return data.map(function(item) {
-      return {
-        id: typeof item.id === "string" ? item.id : U.uid(),
-        time: typeof item.time === "string" ? item.time : "",
-        name: typeof item.name === "string" ? item.name : "",
-        task: typeof item.task === "string" ? item.task : ""
-      };
-    });
-  }
-
   function sanitizeState(s){
     return {
       schemaVersion: SCHEMA_VERSION,
       meta: sanitizeMeta(s && s.meta),
+      customLists: sanitizeCustomLists(s && s.customLists),
       cycle: App.Challenge.sanitizeCycle(s && s.cycle),
+      cycles: sanitizeCycles(s && s.cycles),
       history: sanitizeHistory(s && s.history),
       cycleTemplates: sanitizeCycleTemplates(s && s.cycleTemplates),
       challengeNotes: sanitizeChallengeNotes(s && s.challengeNotes),
-      days: sanitizeDays(s && s.days),
-      subjectRotation: sanitizeSubjectRotation(s && s.subjectRotation),
-      routineBlocks: sanitizeRoutineBlocks(s && s.routineBlocks)
+      days: sanitizeDays(s && s.days)
     };
   }
 
@@ -234,7 +281,7 @@ App.Storage = (function(){
 
   function tryMigrateLegacy(){
     var found = false;
-    var result = { cycle: null, days: {}, subjectRotation: null, routineBlocks: null };
+    var result = { cycle: null, days: {} };
     try{
       var raw = localStorage.getItem(LEGACY_CYCLE_KEY);
       if(raw){
@@ -259,8 +306,6 @@ App.Storage = (function(){
     }catch(e){}
     if(!found) return null;
     if(!result.cycle) result.cycle = App.Challenge.defaultCycle();
-    if(!result.subjectRotation) result.subjectRotation = defaultSubjectRotation();
-    if(!result.routineBlocks) result.routineBlocks = defaultRoutineBlocks();
     return result;
   }
 
@@ -274,12 +319,7 @@ App.Storage = (function(){
       var raw = localStorage.getItem(STORAGE_KEY);
       if(raw){
         var parsed = JSON.parse(raw);
-        if(parsed && parsed.cycle) {
-          // migrate older versions
-          if (!parsed.subjectRotation) parsed.subjectRotation = defaultSubjectRotation();
-          if (!parsed.routineBlocks) parsed.routineBlocks = defaultRoutineBlocks();
-          return sanitizeState(parsed);
-        }
+        if(parsed && parsed.cycle) return sanitizeState(parsed);
       }
     }catch(e){ console.error("Could not read saved tracker data:", e); }
 
@@ -287,23 +327,23 @@ App.Storage = (function(){
     if(legacy){
       migrated = true;
       var sanitized = sanitizeState(legacy);
+      sanitized.customLists = { habits: defaultHabitList(), routine: defaultRoutineBlocks() };
       persist(sanitized);
       return sanitized;
     }
-    // fresh start
-    return sanitizeState({
-      cycle: App.Challenge.defaultCycle(),
-      days: {},
-      subjectRotation: defaultSubjectRotation(),
-      routineBlocks: defaultRoutineBlocks()
-    });
+    var fresh = sanitizeState({ cycle: App.Challenge.defaultCycle(), days: {} });
+    fresh.customLists = { habits: defaultHabitList(), routine: defaultRoutineBlocks() };
+    return fresh;
   }
 
-  function init(){
-    state = load();
+  function invalidateCache(){
+    _memoCache = {};
   }
 
-  function save(){ persist(state); }
+  function save(){
+    persist(state);
+    invalidateCache();
+  }
 
   function markBackupDownloaded(filename){
     if(!state.meta) state.meta = sanitizeMeta({});
@@ -332,20 +372,58 @@ App.Storage = (function(){
     save();
   }
 
-  // ---- new getters/setters ----
-  function getSubjectRotation() {
-    return state.subjectRotation || defaultSubjectRotation();
+  function getHabits(){
+    return state.customLists.habits;
   }
-  function setSubjectRotation(rotation) {
-    state.subjectRotation = sanitizeSubjectRotation(rotation);
+
+  function getRoutineBlocks(){
+    return state.customLists.routine;
+  }
+
+  function updateHabits(newList){
+    state.customLists.habits = newList;
     save();
   }
-  function getRoutineBlocks() {
-    return state.routineBlocks || defaultRoutineBlocks();
-  }
-  function setRoutineBlocks(blocks) {
-    state.routineBlocks = sanitizeRoutineBlocks(blocks);
+
+  function updateRoutineBlocks(newList){
+    state.customLists.routine = newList;
     save();
+  }
+
+  function getCycles(){
+    return state.cycles || [];
+  }
+
+  function addCycle(cycle){
+    if(!Array.isArray(state.cycles)) state.cycles = [];
+    state.cycles.push(App.Challenge.sanitizeCycle(cycle));
+    save();
+  }
+
+  function removeCycle(index){
+    if(Array.isArray(state.cycles) && state.cycles[index]){
+      state.cycles.splice(index, 1);
+      save();
+    }
+  }
+
+  function init(){
+    state = load();
+    if(!state.customLists) state.customLists = { habits: defaultHabitList(), routine: defaultRoutineBlocks() };
+    save();
+  }
+
+  function scheduleAutoBackup(){
+    var now = new Date();
+    var night = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
+    var msToMidnight = night.getTime() - now.getTime();
+    setTimeout(function(){
+      var filename = "auto-backup-" + U.todayKey() + ".json";
+      U.downloadBlob(JSON.stringify(state, null, 2), "application/json", filename);
+      markBackupDownloaded(filename);
+      U.showToast("Auto-backup saved: " + filename, 4000, "success");
+      scheduleAutoBackup();
+    }, msToMidnight + 1000);
   }
 
   return {
@@ -358,15 +436,18 @@ App.Storage = (function(){
     mutateDay: mutateDay,
     replaceState: replaceState,
     replaceCycle: replaceCycle,
+    getHabits: getHabits,
+    getRoutineBlocks: getRoutineBlocks,
+    updateHabits: updateHabits,
+    updateRoutineBlocks: updateRoutineBlocks,
+    getCycles: getCycles,
+    addCycle: addCycle,
+    removeCycle: removeCycle,
+    scheduleAutoBackup: scheduleAutoBackup,
     sanitizeState: sanitizeState,
     isValidUnified: isValidUnified,
     isLegacyCycleBackup: isLegacyCycleBackup,
     get migrated(){ return migrated; },
-    getSubjectRotation: getSubjectRotation,
-    setSubjectRotation: setSubjectRotation,
-    getRoutineBlocks: getRoutineBlocks,
-    setRoutineBlocks: setRoutineBlocks,
-    defaultSubjectRotation: defaultSubjectRotation,
-    defaultRoutineBlocks: defaultRoutineBlocks
+    invalidateCache: invalidateCache
   };
 })();

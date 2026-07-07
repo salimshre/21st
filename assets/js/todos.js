@@ -15,8 +15,8 @@ App.Todos = (function(){
   // ----- Helper: format due date -----
   function formatDueDate(dateStr) {
     if (!dateStr) return '';
-    var d = new Date(dateStr + 'T00:00:00'); // force UTC to avoid timezone shifts
-    if (isNaN(d.getTime())) return dateStr; // fallback to raw
+    var d = new Date(dateStr + 'T00:00:00');
+    if (isNaN(d.getTime())) return dateStr;
     var today = new Date();
     today.setHours(0,0,0,0);
     var tomorrow = new Date(today);
@@ -66,7 +66,7 @@ App.Todos = (function(){
         var db = b.dueDate ? new Date(b.dueDate + 'T00:00:00') : new Date(8640000000000000);
         return da - db;
       });
-    } // else keep original order (insertion order)
+    }
 
     if (filtered.length === 0) {
       container.innerHTML = '<div class="challenge-empty">No tasks match the current filter.</div>';
@@ -282,7 +282,7 @@ App.Todos = (function(){
     if (input) input.value = '';
     var dueInput = document.getElementById("todoDueDate");
     if (dueInput) dueInput.value = '';
-    U.showToast('Task added');
+    U.showToast('Task added', 1500, 'success');
   }
 
   function toggleTodo(id) {
@@ -321,11 +321,11 @@ App.Todos = (function(){
         undoStack.splice(i, 1);
         setTodos(todos, false);
         found = true;
-        U.showToast('Undo successful');
+        U.showToast('Undo successful', 1500, 'success');
         break;
       }
     }
-    if (!found) U.showToast('Nothing to undo');
+    if (!found) U.showToast('Nothing to undo', 1500, 'warning');
   }
 
   function clearTodos() {
@@ -347,11 +347,11 @@ App.Todos = (function(){
         var items = action.items;
         setTodos(items, false);
         undoStack.splice(i, 1);
-        U.showToast('Undo successful');
+        U.showToast('Undo successful', 1500, 'success');
         return;
       }
     }
-    U.showToast('Nothing to undo');
+    U.showToast('Nothing to undo', 1500, 'warning');
   }
 
   function completeAllTodos() {
@@ -363,14 +363,14 @@ App.Todos = (function(){
     });
     if (changed) {
       setTodos(todos);
-      U.showToast('All tasks completed');
+      U.showToast('All tasks completed', 1500, 'success');
     }
   }
 
   function deleteCompletedTodos() {
     var todos = getTodos();
     var completed = todos.filter(function(t) { return t.done; });
-    if (completed.length === 0) { U.showToast('No completed tasks'); return; }
+    if (completed.length === 0) { U.showToast('No completed tasks', 1500, 'warning'); return; }
     if (!confirm('Delete ' + completed.length + ' completed tasks?')) return;
     var remaining = todos.filter(function(t) { return !t.done; });
     undoStack.push({ type: 'delete-completed', items: completed });
@@ -389,11 +389,11 @@ App.Todos = (function(){
         todos = todos.concat(items);
         setTodos(todos, false);
         undoStack.splice(i, 1);
-        U.showToast('Undo successful');
+        U.showToast('Undo successful', 1500, 'success');
         return;
       }
     }
-    U.showToast('Nothing to undo');
+    U.showToast('Nothing to undo', 1500, 'warning');
   }
 
   function reorderTodos(fromIndex, toIndex) {
@@ -410,7 +410,7 @@ App.Todos = (function(){
     var yesterdayTodos = yesterdayData.todos || [];
     var undone = yesterdayTodos.filter(function(t) { return !t.done; });
     if (undone.length === 0) {
-      U.showToast('No undone tasks from yesterday');
+      U.showToast('No undone tasks from yesterday', 1500, 'warning');
       return;
     }
     var currentTodos = getTodos();
@@ -418,27 +418,12 @@ App.Todos = (function(){
       return { id: U.uid(), text: t.text, done: false, priority: t.priority || 'medium', dueDate: t.dueDate || '' };
     }));
     setTodos(newTodos);
-    U.showToast('Copied ' + undone.length + ' tasks from yesterday');
+    U.showToast('Copied ' + undone.length + ' tasks from yesterday', 2000, 'success');
   }
 
   // ----- Undo toast helper -----
   function showUndoToast(msg, undoCallback) {
-    var toast = document.getElementById('toast');
-    if (!toast) return;
-    toast.innerHTML = msg + ' <button class="undo-btn" style="margin-left:10px;background:transparent;border:1px solid white;color:white;padding:2px 8px;border-radius:4px;cursor:pointer;">Undo</button>';
-    toast.classList.add('show');
-    clearTimeout(toast._timer);
-    var handler = function(e) {
-      if (e.target.classList.contains('undo-btn')) {
-        undoCallback();
-        toast.classList.remove('show');
-      }
-    };
-    toast.addEventListener('click', handler);
-    toast._timer = setTimeout(function() {
-      toast.classList.remove('show');
-      toast.removeEventListener('click', handler);
-    }, 5000);
+    U.showToast(msg, 5000, null, undoCallback);
   }
 
   // ----- Public API -----
@@ -465,3 +450,4 @@ App.Todos = (function(){
     deleteCompletedTodos: deleteCompletedTodos
   };
 })();
+
