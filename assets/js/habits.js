@@ -163,8 +163,8 @@ App.Habits = (function(){
         '<span class="routine-drag-handle" title="Drag to reorder">⋮⋮</span>' +
         '<div class="routine-time editable" contenteditable="true" data-field="time">'+U.escapeHtml(b.time)+'</div>' +
         '<div class="routine-main">' +
-          '<div class="routine-name editable" contenteditable="true" data-field="name">'+U.escapeHtml(b.name)+'</div>' +
-          '<div class="routine-task editable" contenteditable="true" data-field="task">'+U.escapeHtml(b.task)+'</div>' +
+          '<span class="routine-name editable" contenteditable="true" data-field="name">'+U.escapeHtml(b.name)+'</span>' +
+          '<span class="routine-task editable" contenteditable="true" data-field="task">'+U.escapeHtml(b.task)+'</span>' +
         '</div>' +
         '<input class="native-check" type="checkbox" '+(on?"checked":"")+'>' +
         '<div class="check-box'+(on?" done":"")+'">'+(on?CHECK_SVG:"")+'</div>' +
