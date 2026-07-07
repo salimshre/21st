@@ -1,6 +1,8 @@
 /* ============================================================
    storage.js – Unified data layer with versioning, auto-backup,
    custom lists, memoisation, and schema v2.
+   FIXED: sanitizeDays no longer calls App.Habits.normalizeDay
+   at load time – normalization happens in getDay() instead.
    ============================================================ */
 
 window.App = window.App || {};
@@ -246,11 +248,15 @@ App.Storage = (function(){
     return out;
   }
 
+  // ---- FIX: sanitizeDays now preserves raw data instead of normalizing ----
   function sanitizeDays(days){
     var out = {};
     var d = (days && typeof days === "object") ? days : {};
     Object.keys(d).forEach(function(k){
-      if(/^\d{4}-\d{2}-\d{2}$/.test(k)) out[k] = App.Habits.normalizeDay(d[k]);
+      if(/^\d{4}-\d{2}-\d{2}$/.test(k)){
+        // Keep the raw data as-is; normalization happens in getDay()
+        out[k] = d[k];
+      }
     });
     return out;
   }
@@ -352,12 +358,15 @@ App.Storage = (function(){
     save();
   }
 
+  // ---- FIX: getDay now normalizes on access ----
   function getDay(key){
-    return state.days[key] ? App.Habits.normalizeDay(state.days[key]) : App.Habits.emptyDay();
+    var raw = state.days[key] || {};
+    // Normalize only when accessed – by then App.Habits is fully loaded
+    return App.Habits.normalizeDay(raw);
   }
 
   function mutateDay(key, fn){
-    if(!state.days[key]) state.days[key] = App.Habits.emptyDay();
+    if(!state.days[key]) state.days[key] = {};
     fn(state.days[key]);
     save();
   }

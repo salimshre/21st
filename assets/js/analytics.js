@@ -165,7 +165,6 @@ App.Analytics = (function(){
       '<div class="analytics-card"><div class="analytics-big">'+thisWeek.pomodoros+'</div><div class="analytics-label">Pomodoros</div><div class="analytics-sub">'+(thisWeek.pomodoros/7).toFixed(1)+'/day</div></div>' +
       '<div class="analytics-card"><div class="analytics-big">'+avgRating+'</div><div class="analytics-label">Avg Rating</div><div class="analytics-sub">'+(lastAvgRating!=="—" ? "vs "+lastAvgRating+" last wk" : "—")+'</div></div>';
 
-    // Habit insights
     dom.habitInsights.innerHTML = App.Storage.getHabits().map(function(h){
       var pct = Math.round(((thisWeek.habitCounts[h.id]||0)/7)*100);
       var color = pct>=80 ? "var(--success)" : pct>=50 ? "var(--primary)" : "var(--danger)";
@@ -174,7 +173,6 @@ App.Analytics = (function(){
         '<div class="habit-pct">'+pct+'%</div></div></div>';
     }).join("");
 
-    // Routine insights
     dom.routineInsights.innerHTML = App.Storage.getRoutineBlocks().map(function(b){
       var pct = Math.round(((thisWeek.routineCounts[b.id]||0)/7)*100);
       var color = pct>=80 ? "var(--success)" : pct>=50 ? "var(--primary)" : "var(--danger)";
@@ -183,7 +181,6 @@ App.Analytics = (function(){
         '<div class="habit-pct">'+pct+'%</div></div></div>';
     }).join("");
 
-    // Cycle categories
     dom.analyticsCycleWrap.innerHTML = C.CAT_ORDER.map(function(c){
       if(!cycle.catTotal[c]) return "";
       var cat = C.CATEGORIES[c];
@@ -192,7 +189,6 @@ App.Analytics = (function(){
         '<div class="bar-track"><div class="bar-fill" style="width:'+pct+'%;background:var('+cat.varName+')"></div></div></div>';
     }).join("");
 
-    // Individual habit streaks
     var streaks = computeHabitStreaks();
     dom.habitStreaks.innerHTML = App.Storage.getHabits().map(function(h){
       var s = streaks[h.id] || 0;
@@ -201,7 +197,6 @@ App.Analytics = (function(){
         '<div class="habit-pct">'+s+' days</div></div></div>';
     }).join("");
 
-    // Monthly summary
     var months = getMonthlySummary();
     dom.monthlySummary.innerHTML = months.map(function(week, idx){
       var totalHabits = 0, totalRoutine = 0, saved = 0;
@@ -221,7 +216,6 @@ App.Analytics = (function(){
         '<div class="analytics-sub">Routine: '+avgRoutine+'/'+App.Storage.getRoutineBlocks().length+'</div></div>';
     }).join("");
 
-    // Data health, cycle history, missed insights, streak grid
     renderDataHealth();
     renderCycleHistoryAnalytics();
     renderMissedChallengeInsights();
@@ -229,7 +223,6 @@ App.Analytics = (function(){
     renderTodoInsights();
   }
 
-  // ---- Cycle history (unchanged) ----
   function cycleScore(cycle){ return App.Challenge.computeCycleStats(cycle).overallPct; }
   function cycleLabel(cycle){ return App.Util.fmtWeekdayDate(cycle.startDate) + " - " + App.Util.fmtWeekdayDate(App.Util.addDays(cycle.startDate, 20)); }
 
@@ -329,7 +322,6 @@ App.Analytics = (function(){
 
   function init(){
     cacheDom();
-    // Invalidate caches when data changes
     App.Storage.invalidateCache = function(){
       _weeklyCache = {};
     };

@@ -1,6 +1,6 @@
 /* ============================================================
    challenge.js – 21-Day challenge with reorder, multiple cycles,
-   memoised stats, and quick start from header.
+   memoised stats, and auto-advance on refresh if cycle is complete.
    ============================================================ */
 
 App.Challenge = (function(){
@@ -202,7 +202,7 @@ App.Challenge = (function(){
     dom.quickStartCycle = document.getElementById("quickStartCycle");
   }
 
-  // ---- Render functions (mostly unchanged from original, but we include them all) ----
+  // ---- Render functions ----
   function populateCategorySelect(){
     CAT_ORDER.forEach(function(key){
       var opt = document.createElement("option");
@@ -476,12 +476,27 @@ App.Challenge = (function(){
     }
 
     if(dayIdx >= DAYS_IN_CYCLE){
-      dom.challengeChecklist.innerHTML =
-        '<div class="challenge-empty challenge-empty-actions">' +
-          '<div>This 21-day cycle is complete. Start the next cycle to make today Day 1 again.</div>' +
-          '<button type="button" class="inline-action" data-start-next-cycle>Start next 21-day cycle</button>' +
-        '</div>';
-      renderChallengeDayNote();
+      // Auto-start a new cycle instead of showing the message
+      // This is the fix for the "start next cycle" on refresh
+      if(!App.Storage.state._autoCycleStarted){
+        App.Storage.state._autoCycleStarted = true;
+        // Archive current and start fresh
+        startFreshCycle(null, true);
+        // Re-render after the cycle is reset
+        setTimeout(function(){
+          App.setCurKey(U.todayKey());
+          App.renderDayNav();
+          App.renderHeader();
+          U.showToast("New cycle started automatically (previous cycle archived)", 3000, "info");
+        }, 100);
+      } else {
+        dom.challengeChecklist.innerHTML =
+          '<div class="challenge-empty challenge-empty-actions">' +
+            '<div>This 21-day cycle is complete. Start the next cycle to make today Day 1 again.</div>' +
+            '<button type="button" class="inline-action" data-start-next-cycle>Start next 21-day cycle</button>' +
+          '</div>';
+        renderChallengeDayNote();
+      }
       return;
     }
 
@@ -556,6 +571,8 @@ App.Challenge = (function(){
     state.cycle.activities.forEach(function(a){ state.cycle.checks[a.id] = new Array(DAYS_IN_CYCLE).fill(false); });
     state.cycle.startDate = U.todayKey();
     currentCycleView = "current";
+    // Reset the auto-cycle flag so it doesn't keep triggering
+    state._autoCycleStarted = false;
     App.Storage.save();
     invalidateStatsCache();
     rebuildCycleTable();
@@ -599,7 +616,6 @@ App.Challenge = (function(){
 
   // ---- Events ----
   function wireEvents(){
-    // Toggle checks, delete activity, edit name (same as original)
     dom.cycleBody.addEventListener("click", function(e){
       var chk = e.target.closest(".chk");
       if(chk){
@@ -820,7 +836,6 @@ App.Challenge = (function(){
       U.showToast("Template cycle started", 2000, "success");
     });
 
-    // Challenge checklist events
     dom.challengeChecklist.addEventListener("change", function(e){
       var input = e.target;
       if(!input.matches || !input.matches("[data-challenge-id]")) return;
@@ -860,12 +875,10 @@ App.Challenge = (function(){
       }
     });
 
-    // Quick start from header
     if(dom.quickStartCycle){
       dom.quickStartCycle.addEventListener("click", quickStartNextCycle);
     }
 
-    // Reorder via drag & drop
     var tbody = dom.cycleBody;
     var dragSrcIndex = null;
     tbody.addEventListener("dragstart", function(e){
