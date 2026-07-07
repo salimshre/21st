@@ -1,16 +1,15 @@
 ﻿# Repository file structure
-Generated: 2026-07-07T13:33:50+05:45
+Generated: 2026-07-07T14:29:53+05:45
 A cleaner, hierarchical view of the repository. Directories end with '/'.
 Cache folders (__pycache__, .pytest_cache, .ruff_cache) are summarised.
 Excluded: .git, .agents, FILE_STRUCTURE.md.
 ## Summary
 - Directories: 24
-- Files: 65
+- Files: 64
 ## Tree
 ├── .gitignore (14 B)
 ├── build-static.php (2.58 KB)
 ├── copy_to_tmp.bat (2.07 KB)
-├── FILE_STRUCTURE1.md (25.24 KB)
 ├── generate-structure.bat (4.54 KB)
 ├── improved_routine.md (7.78 KB)
 ├── index.php (1.43 KB)
@@ -40,17 +39,17 @@ Excluded: .git, .agents, FILE_STRUCTURE.md.
 │   └── trash/
 ├── assets/
 │   ├── css/
-│   │   ├── app.css (31.42 KB)
+│   │   ├── app.css (32.58 KB)
 │   │   ├── dark-theme.css (669 B)
 │   │   ├── light-theme.css (829 B)
 │   │   └── variables.css (105 B)
 │   ├── icons/
 │   ├── js/
-│   │   ├── analytics.js (14.58 KB)
+│   │   ├── analytics.js (14.19 KB)
 │   │   ├── app.js (10.29 KB)
 │   │   ├── challenge.js (37.54 KB)
-│   │   ├── habits.js (14.44 KB)
-│   │   ├── storage.js (10.29 KB)
+│   │   ├── habits.js (18.16 KB)
+│   │   ├── storage.js (14.25 KB)
 │   │   ├── theme.js (2.49 KB)
 │   │   └── todos.js (15.87 KB)
 │   └── parsedown/
@@ -58,7 +57,7 @@ Excluded: .git, .agents, FILE_STRUCTURE.md.
 ├── components/
 │   ├── analytics-view.php (1.32 KB)
 │   ├── challenge-view.php (3.22 KB)
-│   ├── daily-view.php (3.80 KB)
+│   ├── daily-view.php (4.88 KB)
 │   ├── footer.php (1.76 KB)
 │   ├── header.php (1.95 KB)
 │   ├── journal-view.php (5.56 KB)
@@ -95,4 +94,4 @@ Excluded: .git, .agents, FILE_STRUCTURE.md.
 │       └── parsedown/
 │           └── Parsedown.php (52.80 KB)
 └── tests/
-    └── smoke.js (1.97 KB)
+    └── smoke.js (3.75 KB)
