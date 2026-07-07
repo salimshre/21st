@@ -16,12 +16,13 @@ App.Analytics = (function(){
     var today = U.todayKey();
     var streaks = {};
     habits.forEach(function(h){
-      var count = 0, key = today;
-      while(true){
+      var count = 0, key = today, guard = 0;
+      while(guard < 3650){
         var d = App.Storage.getDay(key);
         if(!d.saved || !d.h[h.id]) break;
         count++;
         key = U.addDays(key, -1);
+        guard++;
       }
       streaks[h.id] = count;
     });

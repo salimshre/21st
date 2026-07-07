@@ -366,6 +366,7 @@ App.Habits = (function(){
       var delta = Number(btn.dataset.delta);
       var blocks = getPomodoroBlocks();
       var blk = blocks.find(function(x){ return x.id === id; });
+      if(!blk) return;
       App.Storage.mutateDay(App.curKey, function(d){ d.po[id] = U.clamp((d.po[id]||0) + delta, 0, blk.target+3); });
       var row = dom.blocksList.querySelector('.block-row[data-block-id="'+id+'"]');
       if(row) row.outerHTML = renderBlockRowHtml(blk);
