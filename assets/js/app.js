@@ -222,6 +222,12 @@
       e.preventDefault();
       showTour();
     }
+    if (e.key === "Escape" && document.body.classList.contains('focus-mode')) {
+    document.body.classList.remove('focus-mode');
+    App.Storage.state.meta.focusMode = false;
+    App.Storage.save();
+}
+
   }
 
   // ---- Focus mode ----
