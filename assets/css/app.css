@@ -859,3 +859,29 @@ body.focus-mode .view {
   box-shadow: 0 4px 20px rgba(0,0,0,0.3);
 }
 
+
+/* ---- Editable subject chips ---- */
+.subject-name.editable {
+  cursor: text;
+  border-bottom: 2px dashed var(--border);
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.subject-name.editable:hover {
+  background: var(--card-bg-soft);
+  border-color: var(--primary);
+}
+.subject-name.editable:focus {
+  outline: none;
+  border-color: var(--primary);
+  background: var(--card-bg);
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+}
+.subject-chip .subject-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}

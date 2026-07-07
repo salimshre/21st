@@ -1,6 +1,7 @@
 /* ============================================================
    habits.js – Daily log domain with custom lists, debounced
-   auto‑save, individual habit streaks, and manage interfaces.
+   auto‑save, individual habit streaks, manage interfaces,
+   and editable subject rotation.
    ============================================================ */
 
 App.Habits = (function(){
@@ -37,7 +38,8 @@ App.Habits = (function(){
     blocks.forEach(function(x){ po[x.id]=0; });
     var routine = App.Storage.getRoutineBlocks();
     routine.forEach(function(x){ rb[x.id]=false; });
-    return { h:h, po:po, rb:rb, rating:5, journal:"", priority:"", saved:false, todos:[] };
+    // subjects: array of 4 strings, will be filled by normalizeDay if missing
+    return { h:h, po:po, rb:rb, rating:5, journal:"", priority:"", saved:false, todos:[], subjects:[] };
   }
 
   function normalizeDay(raw){
@@ -53,11 +55,18 @@ App.Habits = (function(){
     out.journal = typeof out.journal === "string" ? out.journal : "";
     out.priority = typeof out.priority === "string" ? out.priority : "";
     out.saved = !!out.saved;
+    // Todos
     var rawTodos = d.todos;
     if (!Array.isArray(rawTodos)) rawTodos = [];
     out.todos = rawTodos.map(function(t) {
       return { id: t.id || U.uid(), text: t.text || '', done: !!t.done };
     });
+    // Subjects: ensure it's an array of 4 strings
+    if (!Array.isArray(out.subjects) || out.subjects.length !== 4) {
+      // fallback to default based on weekday
+      var dow = U.keyToDate(App.curKey || U.todayKey()).getDay();
+      out.subjects = SUBJECT_ROTATION[dow] || SUBJECT_ROTATION[0];
+    }
     return out;
   }
 
@@ -101,10 +110,51 @@ App.Habits = (function(){
   function renderRoutine(){
     var d = App.Storage.getDay(App.curKey);
     var dow = U.keyToDate(App.curKey).getDay();
-    var subjects = SUBJECT_ROTATION[dow];
-    dom.subjectRotation.innerHTML = ["Study A","Study B","Study C","Study D"].map(function(label,i){
-      return '<div class="subject-chip"><div class="subject-label">'+label+'</div><div class="subject-name">'+subjects[i]+'</div></div>';
+    // Use custom subjects if available, else fallback
+    var subjects = (d.subjects && d.subjects.length === 4) ? d.subjects : SUBJECT_ROTATION[dow];
+
+    dom.subjectRotation.innerHTML = ["Study A","Study B","Study C","Study D"].map(function(label, i){
+      // wrap each subject in a contentEditable span
+      return '<div class="subject-chip">' +
+        '<div class="subject-label">'+label+'</div>' +
+        '<span class="subject-name editable" contenteditable="true" data-index="'+i+'" title="Click to edit">' +
+          U.escapeHtml(subjects[i] || '') +
+        '</span>' +
+      '</div>';
     }).join("");
+
+    // Wire blur events to save changes
+    dom.subjectRotation.querySelectorAll('.subject-name').forEach(function(el){
+      el.addEventListener('blur', function(e){
+        var idx = parseInt(this.dataset.index, 10);
+        var newVal = this.textContent.trim();
+        if(!newVal) newVal = subjects[idx] || 'Untitled';
+        // Update the day's subjects array
+        App.Storage.mutateDay(App.curKey, function(d){
+          if(!Array.isArray(d.subjects) || d.subjects.length !== 4){
+            d.subjects = SUBJECT_ROTATION[U.keyToDate(App.curKey).getDay()].slice();
+          }
+          d.subjects[idx] = newVal;
+        });
+        // Reflect the change immediately (without re-render)
+        // Re-render to ensure consistency (but we could just update text)
+        // To avoid losing focus, we'll re-render the whole section carefully.
+        // For simplicity, we re-render all subjects but keep the same content.
+        // However, we don't want to lose focus. So we'll just update the text.
+        // Actually, we can just update the text and keep the editing state.
+        // But the user might have clicked away, so re-render is fine.
+        renderRoutine();
+      });
+      // Allow Enter to confirm edit
+      el.addEventListener('keydown', function(e){
+        if(e.key === 'Enter'){
+          e.preventDefault();
+          this.blur();
+        }
+      });
+    });
+
+    // Routine checklist (unchanged)
     var routine = App.Storage.getRoutineBlocks();
     dom.routineList.innerHTML = routine.map(function(b){
       var on = !!d.rb[b.id];
@@ -191,7 +241,7 @@ App.Habits = (function(){
     updateDailyStats();
   }
 
-  // ---- Manage modals ----
+  // ---- Manage modals (unchanged) ----
   function showManageHabits(){
     var habits = App.Storage.getHabits();
     var html = '<div class="modal-overlay" id="manageModal">' +
