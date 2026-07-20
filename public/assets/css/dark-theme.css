@@ -1,0 +1,23 @@
+[data-theme="dark"]{
+  --dark-bg:#0f172a;
+  --card-bg:#1e293b;
+  --card-bg-soft:#243248;
+  --border:#334155;
+  --border-soft:#27374d;
+  --text-primary:#f1f5f9;
+  --text-secondary:#cbd5e1;
+  --text-muted:#94a3b8;
+  --header-bg:rgba(15,23,42,.92);
+  --button-text:#cbd5e1;
+  --button-on-text:#06101f;
+  --shadow-soft:rgba(0,0,0,.24);
+
+  --primary:#3b82f6;
+  --mind:#a78bfa;        --mind-tint:rgba(167,139,250,.16);
+  --learning:#38bdf8;    --learning-tint:rgba(56,189,248,.16);
+  --discipline:#fbbf24;  --discipline-tint:rgba(251,191,36,.16);
+  --health:#2dd4bf;      --health-tint:rgba(45,212,191,.16);
+  --diet:#f472b6;        --diet-tint:rgba(244,114,182,.16);
+}
+
+
