@@ -1,2 +1,7 @@
 tmp/
 
+prepare_config.json
+prepare_for_deepseek.py
+.prepare_config.json
+.prepare_for_deepseek.py
+
